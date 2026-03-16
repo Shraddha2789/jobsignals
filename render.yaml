@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: jobsignals
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    branch: main
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jobsignals-db
+          property: connectionString
+      - key: API_RELOAD
+        value: false
+      - key: GROQ_API_KEY
+        sync: false   # you set this manually in Render dashboard
+
+databases:
+  - name: jobsignals-db
+    plan: free
+    databaseName: jobsignals
+    user: jobsignals
