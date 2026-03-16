@@ -1,0 +1,18 @@
+# Railway deployment configuration — https://docs.railway.app/reference/config-as-code
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+# ── Environment variables to set in Railway dashboard ─────────────────────────
+# DATABASE_URL     → auto-injected by Railway PostgreSQL plugin
+# GROQ_API_KEY     → from https://console.groq.com/keys
+# ADZUNA_APP_ID    → from https://developer.adzuna.com/
+# ADZUNA_APP_KEY   → from https://developer.adzuna.com/
+# JOOBLE_API_KEY   → from https://jooble.org/api/about
+# API_RELOAD       → false (already set in Dockerfile)

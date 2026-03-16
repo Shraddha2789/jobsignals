@@ -1,0 +1,2155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>JobSignals — Market Intelligence Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ── Dark theme (default) ── */
+:root,[data-theme="dark"] {
+  --bg: #080b14;
+  --surface: #0f1520;
+  --surface2: #151d2e;
+  --surface3: #1c2640;
+  --border: #1e2d45;
+  --border2: #243350;
+  --accent: #4f8ef7;
+  --accent-glow: rgba(79,142,247,0.15);
+  --green: #10b981;
+  --green-glow: rgba(16,185,129,0.15);
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --purple: #8b5cf6;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #4a5568;
+}
+/* ── Light theme (LinkedIn/AmbitionBox style) ── */
+[data-theme="light"] {
+  --bg: #f3f2ef;
+  --surface: #ffffff;
+  --surface2: #f3f2ef;
+  --surface3: #e8e8e3;
+  --border: #dce6f1;
+  --border2: #c7d5e8;
+  --accent: #0a66c2;
+  --accent-glow: rgba(10,102,194,0.10);
+  --green: #057642;
+  --green-glow: rgba(5,118,66,0.10);
+  --amber: #915907;
+  --red: #b91c1c;
+  --purple: #7c3aed;
+  --text: #111827;
+  --text2: #374151;
+  --text3: #6b7280;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:13px;line-height:1.5}
+
+/* ── Layout ── */
+.shell{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:220px;min-width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.main-area{flex:1;overflow-y:auto;background:var(--bg)}
+
+/* ── Sidebar ── */
+.sb-logo{padding:20px 18px 16px;border-bottom:1px solid var(--border)}
+.sb-logo-row{display:flex;align-items:center;gap:8px}
+.sb-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sb-logo-title{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.3px}
+.sb-logo-sub{font-size:10px;color:var(--text3);margin-top:1px;letter-spacing:0.3px;text-transform:uppercase}
+.sb-section-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:16px 18px 6px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;color:var(--text2);transition:all 0.15s;border-left:2px solid transparent;font-size:13px;font-weight:500;user-select:none}
+.nav-item:hover{color:var(--text);background:var(--accent-glow)}
+.nav-item.active{color:var(--accent);background:var(--accent-glow);border-left-color:var(--accent)}
+.nav-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.sb-footer{margin-top:auto;padding:14px 18px;border-top:1px solid var(--border)}
+.live-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(16,185,129,0.4)}50%{opacity:0.7;box-shadow:0 0 0 4px rgba(16,185,129,0)}}
+
+/* ── Top bar ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10}
+.topbar-title{font-size:16px;font-weight:700;color:var(--text)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-meta{font-size:11px;color:var(--text3)}
+.topbar-status{display:flex;align-items:center;gap:5px;background:var(--green-glow);border:1px solid rgba(16,185,129,0.3);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--green);font-weight:600}
+
+/* ── Pages ── */
+.page{display:none;padding:24px 28px;min-height:calc(100vh - 57px)}
+.page.active{display:block}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column}
+/* Chart-wrap inside a card grows to fill remaining card height */
+.card .chart-wrap{flex:1;min-height:0;height:auto}
+.card-accent{border-top:2px solid var(--accent)}
+.card-green{border-top:2px solid var(--green)}
+.card-amber{border-top:2px solid var(--amber)}
+.card-purple{border-top:2px solid var(--purple)}
+.card-red{border-top:2px solid var(--red)}
+
+/* ── KPI Cards ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi-c1::before{background:var(--accent)}
+.kpi-c2::before{background:var(--green)}
+.kpi-c3::before{background:var(--amber)}
+.kpi-c4::before{background:var(--purple)}
+.kpi-icon{font-size:22px;margin-bottom:10px;display:block}
+.kpi-value{font-size:32px;font-weight:700;color:var(--text);line-height:1;letter-spacing:-1px}
+.kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-top:6px;font-weight:600}
+.kpi-trend{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;margin-top:8px;padding:2px 7px;border-radius:4px}
+.trend-up{color:var(--green);background:var(--green-glow)}
+.trend-down{color:var(--red);background:rgba(239,68,68,0.12)}
+.trend-flat{color:var(--text3);background:var(--surface3)}
+
+/* ── Grid helpers ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.mb16{margin-bottom:16px}
+.mb20{margin-bottom:20px}
+
+/* ── Section titles ── */
+.section-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-title .badge{font-size:10px;padding:2px 7px;border-radius:4px;background:var(--surface3);color:var(--text3);font-weight:600;letter-spacing:0.4px}
+
+/* ── Tables ── */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:var(--text3);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);font-weight:600}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2)}
+.data-table tr:hover td{background:var(--surface2)}
+.data-table tr:last-child td{border-bottom:none}
+.rank-num{color:var(--text3);font-weight:600;font-size:12px}
+
+/* ── Skill tags / pills ── */
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.pill-blue{background:rgba(79,142,247,0.15);color:var(--accent)}
+.pill-green{background:var(--green-glow);color:var(--green)}
+.pill-amber{background:rgba(245,158,11,0.15);color:var(--amber)}
+.pill-purple{background:rgba(139,92,246,0.15);color:var(--purple)}
+.pill-red{background:rgba(239,68,68,0.12);color:var(--red)}
+.pill-gray{background:var(--surface3);color:var(--text3)}
+.pill-cyan{background:rgba(6,182,212,0.15);color:#06b6d4}
+
+/* ── Skeleton ── */
+.skeleton{background:linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px;height:16px;margin:6px 0}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skeleton-block{height:200px;border-radius:8px;background:linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}
+
+/* ── Insight card ── */
+.insight-card{background:linear-gradient(135deg,rgba(79,142,247,0.08),rgba(139,92,246,0.06));border:1px solid var(--border2);border-radius:12px;padding:20px}
+.insight-text{font-size:13px;color:var(--text2);line-height:1.7}
+.insight-text strong{color:var(--text)}
+.insight-meta{font-size:11px;color:var(--text3);margin-top:12px;display:flex;align-items:center;gap:8px}
+.model-badge{background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-size:10px;color:var(--text3);font-weight:600}
+
+/* ── Buttons ── */
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;font-family:inherit}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#3d7ef5}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover{color:var(--text);border-color:var(--accent);background:var(--accent-glow)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-xs{padding:3px 9px;font-size:11px;border-radius:5px}
+
+/* ── Form controls ── */
+.form-input{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;padding:8px 12px;outline:none;transition:border-color 0.15s}
+.form-input:focus{border-color:var(--accent)}
+.form-select{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;padding:8px 12px;outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.form-select:focus{border-color:var(--accent)}
+
+/* ── Filter bar ── */
+.filter-bar{display:flex;align-items:center;gap:10px;padding:14px 0;flex-wrap:wrap;margin-bottom:16px}
+.filter-search{flex:1;min-width:200px}
+
+/* ── Job cards ── */
+.job-list{display:flex;flex-direction:column;gap:10px}
+.job-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;transition:border-color 0.15s}
+.job-card:hover{border-color:var(--accent);background:var(--surface2)}
+.job-card-left{flex:1;min-width:0}
+.job-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.job-company{font-size:12px;color:var(--text2);margin-bottom:8px}
+.job-tags{display:flex;gap:6px;flex-wrap:wrap}
+.job-date{font-size:11px;color:var(--text3);white-space:nowrap;margin-top:4px}
+
+/* ── Company grid ── */
+.company-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.company-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:all 0.15s}
+.company-card:hover{border-color:var(--accent);background:var(--surface2);transform:translateY(-1px)}
+.company-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+.company-meta{font-size:11px;color:var(--text3);margin-bottom:12px}
+.company-jobs-num{font-size:28px;font-weight:700;color:var(--accent);line-height:1}
+.company-jobs-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+.company-skills{display:flex;gap:5px;flex-wrap:wrap}
+
+/* ── Drawer ── */
+.drawer-overlay{position:fixed;inset:0;background:rgba(8,11,20,0.7);z-index:100;display:none;backdrop-filter:blur(2px)}
+.drawer-overlay.open{display:block}
+.drawer{position:fixed;top:0;right:-480px;width:480px;max-width:90vw;height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:101;overflow-y:auto;transition:right 0.25s cubic-bezier(0.4,0,0.2,1);padding:24px}
+.drawer.open{right:0}
+.drawer-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.drawer-close{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;padding:4px 8px;font-size:16px;line-height:1}
+.drawer-close:hover{color:var(--text)}
+.progress-bar-wrap{background:var(--surface3);border-radius:4px;height:8px;overflow:hidden;margin-top:6px}
+.progress-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--purple));transition:width 0.6s ease}
+
+/* ── AI Insights page ── */
+.ai-hero{background:linear-gradient(135deg,rgba(79,142,247,0.08),rgba(139,92,246,0.06));border:1px solid var(--border2);border-radius:16px;padding:28px;margin-bottom:20px}
+.ai-hero-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px}
+.ai-hero-sub{font-size:13px;color:var(--text2);margin-bottom:18px}
+.ai-search-row{display:flex;gap:10px}
+.ai-search-input{flex:1;padding:12px 16px;font-size:14px}
+.chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.15s}
+.chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-glow)}
+.ai-result{background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:20px;min-height:80px}
+.ai-result-text{font-size:13px;color:var(--text2);line-height:1.75}
+.ai-result-text strong{color:var(--text)}
+
+/* ── Datasets page ── */
+.dataset-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px}
+.dataset-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.dataset-title{font-size:15px;font-weight:600;color:var(--text)}
+.dataset-desc{font-size:12px;color:var(--text2);margin:6px 0 12px}
+.dataset-meta{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.freshness{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--green)}
+.freshness-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.schema-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Courier New',monospace;font-size:12px;color:var(--text2);margin-top:12px;display:none}
+.schema-box.open{display:block}
+.schema-row{display:flex;gap:12px;padding:3px 0;border-bottom:1px solid var(--border)}
+.schema-row:last-child{border-bottom:none}
+.schema-col{color:var(--accent);font-weight:600}
+.schema-type{color:var(--text3)}
+.schema-desc{color:var(--text2);font-size:11px}
+
+/* ── Pipeline ── */
+.pipeline{display:flex;align-items:center;gap:0;flex-wrap:wrap;row-gap:10px;margin:16px 0}
+.pipeline-node{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--text2);font-weight:500;white-space:nowrap}
+.pipeline-node.source{border-color:var(--accent);color:var(--accent)}
+.pipeline-node.dest{border-color:var(--green);color:var(--green)}
+.pipeline-arrow{color:var(--text3);font-size:16px;padding:0 6px;flex-shrink:0}
+
+/* ── API Explorer ── */
+.endpoint-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px}
+.endpoint-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.method-badge{padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:0.5px}
+.method-get{background:rgba(16,185,129,0.15);color:var(--green);border:1px solid rgba(16,185,129,0.3)}
+.endpoint-path{font-family:'Courier New',monospace;font-size:14px;color:var(--text);font-weight:600}
+.endpoint-desc{font-size:13px;color:var(--text2);margin-bottom:14px}
+.params-table{width:100%;border-collapse:collapse;margin-bottom:14px}
+.params-table th{font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);font-weight:600}
+.params-table td{padding:7px 10px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)}
+.params-table tr:last-child td{border-bottom:none}
+.param-name{color:var(--accent);font-family:monospace}
+.param-type{color:var(--amber);font-family:monospace;font-size:11px}
+.code-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'Courier New',monospace;font-size:12px;color:var(--text2);max-height:300px;overflow-y:auto;display:none;white-space:pre-wrap;word-break:break-all}
+.code-block.open{display:block}
+.json-key{color:#79c0ff}
+.json-str{color:#a5d6ff}
+.json-num{color:#f2cc60}
+.json-bool{color:#ff7b72}
+.json-null{color:#8b949e}
+
+/* ── Heatmap ── */
+.heatmap-grid{display:grid;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.heatmap-cell{padding:8px 6px;text-align:center;font-size:11px;font-weight:500;transition:opacity 0.15s}
+.heatmap-cell:hover{opacity:0.8;cursor:default}
+.heatmap-header{background:var(--surface2);color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:0.4px;font-weight:600;padding:8px 6px;text-align:center}
+.heatmap-label{background:var(--surface2);color:var(--text2);font-size:11px;font-weight:500;padding:8px 10px;text-align:right;border-right:1px solid var(--border)}
+
+/* ── Results count ── */
+.results-count{font-size:12px;color:var(--text3);margin-bottom:14px}
+.results-count strong{color:var(--accent)}
+
+/* ── Empty state ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+.empty-state .emoji{font-size:48px;margin-bottom:12px;display:block}
+.empty-state p{font-size:14px}
+
+/* ── Velocity bar ── */
+.velocity-row{display:flex;align-items:center;gap:10px;margin:6px 0}
+.velocity-label{font-size:12px;color:var(--text2);width:90px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.velocity-bar-wrap{flex:1;background:var(--surface3);border-radius:3px;height:6px;overflow:hidden}
+.velocity-bar-fill{height:100%;border-radius:3px;background:var(--accent)}
+
+/* ── Chart wrapper — grows to fill card via flex:1 (set on .card .chart-wrap) ── */
+.chart-wrap{position:relative;width:100%;min-height:160px}
+
+/* ── Treemap ── */
+.treemap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.treemap-cell{border-radius:8px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;min-height:72px;transition:opacity 0.15s}
+.treemap-cell:hover{opacity:0.85}
+.treemap-name{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85);line-height:1.2}
+.treemap-count{font-size:22px;font-weight:700;color:#fff;margin-top:6px}
+.treemap-pct{font-size:10px;color:rgba(255,255,255,0.55);margin-top:2px}
+
+/* ── Global country selector ── */
+.sb-country-wrap{padding:0 14px 14px}
+.country-active-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(79,142,247,0.12);border:1px solid rgba(79,142,247,0.3);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--accent);font-weight:600;margin-left:8px}
+
+/* ── Theme toggle ── */
+.theme-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 12px;border-top:1px solid var(--border);cursor:pointer;user-select:none}
+.theme-toggle-label{font-size:11px;color:var(--text3);font-weight:600}
+.toggle-track{width:36px;height:20px;border-radius:10px;background:var(--surface3);border:1px solid var(--border2);position:relative;transition:background 0.2s;flex-shrink:0}
+.toggle-track.on{background:var(--accent)}
+.toggle-thumb{width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.toggle-track.on .toggle-thumb{left:18px}
+
+/* ── Light mode overrides ── */
+[data-theme="light"] .skeleton{background:linear-gradient(90deg,#e8e8e3 25%,#ddd 50%,#e8e8e3 75%);background-size:200% 100%}
+[data-theme="light"] .skeleton-block{background:linear-gradient(90deg,#e8e8e3 25%,#ddd 50%,#e8e8e3 75%);background-size:200% 100%}
+[data-theme="light"] .nav-item:hover{background:rgba(10,102,194,0.08)}
+[data-theme="light"] .nav-item.active{background:rgba(10,102,194,0.08)}
+[data-theme="light"] .code-block{background:#f8f9fa;color:#1f2937}
+[data-theme="light"] .schema-box{background:#f8f9fa}
+[data-theme="light"] .topbar-status{background:rgba(5,118,66,0.1);border-color:rgba(5,118,66,0.3)}
+[data-theme="light"] .kpi-card{box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+[data-theme="light"] .card{box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+[data-theme="light"] .company-card{box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+[data-theme="light"] .job-card{box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+[data-theme="light"] .drawer{box-shadow:-4px 0 24px rgba(0,0,0,0.12)}
+[data-theme="light"] .ai-hero{background:linear-gradient(135deg,rgba(10,102,194,0.06),rgba(124,58,237,0.04))}
+[data-theme="light"] .insight-card{background:linear-gradient(135deg,rgba(10,102,194,0.05),rgba(124,58,237,0.04))}
+[data-theme="light"] .json-key{color:#0550ae}
+[data-theme="light"] .json-str{color:#0a3069}
+[data-theme="light"] .json-num{color:#953800}
+[data-theme="light"] .json-bool{color:#cf222e}
+[data-theme="light"] .json-null{color:#6e7781}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+
+/* ── Sources table ── */
+.sources-table{width:100%;border-collapse:collapse}
+.sources-table th{font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:var(--text3);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);font-weight:600}
+.sources-table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2)}
+
+/* ── Window chips ── */
+.window-chips{display:flex;gap:6px;margin-bottom:16px}
+.window-chip{padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text3);font-size:12px;cursor:pointer;font-weight:500;transition:all 0.12s}
+.window-chip.active,.window-chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-glow)}
+
+/* ── Sparkline ── */
+.sparkline-cell{display:flex;align-items:center}
+
+/* ── KPI sparkline area ── */
+.kpi-spark{margin-top:10px;opacity:0.85}
+
+/* ── Market Pulse section ── */
+.market-pulse-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.mover-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)}
+.mover-row:last-child{border-bottom:none}
+.mover-name{font-size:12px;color:var(--text);font-weight:500}
+.mover-badge{font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px}
+.mover-up{background:rgba(16,185,129,0.15);color:var(--green)}
+.mover-down{background:rgba(239,68,68,0.12);color:var(--red)}
+
+/* ── Skill movers section (full page) ── */
+.movers-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.movers-col-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+
+/* ── Filter chips (Job Explorer) ── */
+.filter-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;min-height:0}
+.filter-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;background:var(--accent-glow);border:1px solid rgba(79,142,247,0.3);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.12s}
+.filter-chip:hover{background:var(--accent);color:#fff}
+.filter-chip-x{font-size:12px;line-height:1;opacity:0.7;margin-left:2px}
+
+/* ── Sort + filter bar ── */
+.sort-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.sort-label{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ══ SIDEBAR ══ -->
+<nav class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-row">
+      <div class="sb-logo-icon">📡</div>
+      <div>
+        <div class="sb-logo-title">JobSignals</div>
+        <div class="sb-logo-sub">Market Intelligence</div>
+      </div>
+    </div>
+  </div>
+  <div class="sb-section-label" style="padding-top:16px">Region</div>
+  <div class="sb-country-wrap">
+    <select class="form-select" id="globalCountry" style="width:100%;font-size:12px" onchange="onCountryChange(this.value)">
+      <option value="">🌍 Global (All)</option>
+      <option value="US">🇺🇸 United States</option>
+      <option value="GB">🇬🇧 United Kingdom</option>
+      <option value="DE">🇩🇪 Germany</option>
+      <option value="CA">🇨🇦 Canada</option>
+      <option value="AU">🇦🇺 Australia</option>
+      <option value="IN">🇮🇳 India</option>
+      <option value="NL">🇳🇱 Netherlands</option>
+      <option value="FR">🇫🇷 France</option>
+      <option value="SG">🇸🇬 Singapore</option>
+    </select>
+  </div>
+  <div class="sb-section-label">Analytics</div>
+  <div class="nav-item active" data-page="overview">
+    <span class="nav-icon">🏠</span> Overview
+  </div>
+  <div class="nav-item" data-page="skills">
+    <span class="nav-icon">📊</span> Skill Trends
+  </div>
+  <div class="nav-item" data-page="jobs">
+    <span class="nav-icon">💼</span> Job Explorer
+  </div>
+  <div class="nav-item" data-page="companies">
+    <span class="nav-icon">🏢</span> Companies
+  </div>
+  <div class="nav-item" data-page="ai">
+    <span class="nav-icon">✨</span> AI Insights
+  </div>
+  <div class="sb-section-label">Developer</div>
+  <div class="nav-item" data-page="datasets">
+    <span class="nav-icon">🗄️</span> Datasets
+  </div>
+  <div class="nav-item" data-page="apiexplorer">
+    <span class="nav-icon">🔌</span> API Explorer
+  </div>
+  <div class="theme-toggle" onclick="toggleTheme()" title="Switch theme">
+    <span class="theme-toggle-label" id="themeLabel">☀️ Light Mode</span>
+    <div class="toggle-track" id="themeTrack"><div class="toggle-thumb"></div></div>
+  </div>
+  <div class="sb-footer">
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      <span id="liveSyncText">Live · Connecting…</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ MAIN AREA ══ -->
+<div class="main-area" id="mainArea">
+
+<!-- ───── PAGE: OVERVIEW ───── -->
+<div class="page active" id="page-overview">
+  <div class="topbar">
+    <div class="topbar-title">Market Overview</div>
+    <div class="topbar-right">
+      <div class="topbar-meta" id="overviewTopbarMeta">Loading…</div>
+      <div id="overviewCountryPill"></div>
+      <div class="topbar-status"><div class="live-dot"></div> All Systems Operational</div>
+    </div>
+  </div>
+  <div style="padding:24px 28px">
+    <!-- KPIs -->
+    <div class="kpi-grid" id="kpi-row">
+      <div class="kpi-card kpi-c1"><span class="kpi-icon">📋</span><div class="kpi-value">402</div><div class="kpi-label">Total Postings</div><div class="kpi-trend trend-up">▲ 12.4%</div></div>
+      <div class="kpi-card kpi-c2"><span class="kpi-icon">🛠️</span><div class="kpi-value">42</div><div class="kpi-label">Unique Skills</div><div class="kpi-trend trend-up">▲ 4 new</div></div>
+      <div class="kpi-card kpi-c3"><span class="kpi-icon">🏢</span><div class="kpi-value">175</div><div class="kpi-label">Companies Hiring</div><div class="kpi-trend trend-up">▲ 8.1%</div></div>
+      <div class="kpi-card kpi-c4"><span class="kpi-icon">🗂️</span><div class="kpi-value">12</div><div class="kpi-label">Role Families</div><div class="kpi-trend trend-flat">— Stable</div></div>
+    </div>
+
+    <!-- Market Pulse -->
+    <div class="market-pulse-grid" id="marketPulseRow">
+      <div class="card card-green">
+        <div class="section-title">⬆ Rising Skills <span class="badge">7d vs 30d momentum</span></div>
+        <div id="risingSkillsWrap"><div class="skeleton" style="height:140px"></div></div>
+      </div>
+      <div class="card card-accent">
+        <div class="section-title">🏆 Top Hiring Companies <span class="badge">by velocity</span></div>
+        <div id="hotCompaniesWrap"><div class="skeleton" style="height:140px"></div></div>
+      </div>
+    </div>
+
+    <!-- Row 2: Top Skills bar + Treemap -->
+    <div class="grid-2 mb20">
+      <div class="card card-accent">
+        <div class="section-title">Top Skills <span class="badge">30d</span></div>
+        <div class="chart-wrap"><canvas id="chartTopSkills"></canvas></div>
+      </div>
+      <div class="card card-purple">
+        <div class="section-title">Role Family Distribution</div>
+        <div class="treemap-grid" id="treemapGrid">
+          <div class="skeleton-block" style="height:240px;grid-column:span 3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Modality stacked bar + Momentum table -->
+    <div class="grid-2 mb20">
+      <div class="card card-green">
+        <div class="section-title">Hiring by Modality <span class="badge">30d</span></div>
+        <div class="chart-wrap"><canvas id="chartModality"></canvas></div>
+      </div>
+      <div class="card card-amber">
+        <div class="section-title">Skill Momentum <span class="badge">Top 10</span></div>
+        <div id="momentumTableWrap"><div class="skeleton" style="height:200px"></div></div>
+      </div>
+    </div>
+
+    <!-- Auto-insight -->
+    <div class="card mb20" id="autoInsightCard">
+      <div class="section-title">✨ AI Market Analysis <span class="badge">Powered by LLM</span></div>
+      <div id="autoInsightBody">
+        <div class="skeleton" style="height:14px;width:80%"></div>
+        <div class="skeleton" style="height:14px;width:60%;margin-top:8px"></div>
+        <div class="skeleton" style="height:14px;width:70%;margin-top:8px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ───── PAGE: SKILL TRENDS ───── -->
+<div class="page" id="page-skills">
+  <div class="topbar">
+    <div class="topbar-title">Skill Trends</div>
+    <div class="topbar-right">
+      <select class="form-select" id="skillWindowSel" style="width:120px">
+        <option value="7">Last 7d</option>
+        <option value="30" selected>Last 30d</option>
+        <option value="90">Last 90d</option>
+        <option value="365">Last 365d</option>
+      </select>
+      <select class="form-select" id="skillFamilySel" style="width:180px">
+        <option value="">All Families</option>
+        <option>Data Engineering</option>
+        <option>Data Science</option>
+        <option>ML Engineering</option>
+        <option>Software Engineering</option>
+        <option>Product Management</option>
+        <option>Design</option>
+        <option>Marketing</option>
+        <option>Operations</option>
+        <option>Sales</option>
+        <option>Finance</option>
+        <option>HR</option>
+        <option>Other</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="initSkills(true)">Refresh</button>
+    </div>
+  </div>
+  <div style="padding:24px 28px">
+    <div class="grid-2 mb20">
+      <div class="card card-accent">
+        <div class="section-title">Skill Demand</div>
+        <div class="chart-wrap"><canvas id="chartSkillDemand"></canvas></div>
+      </div>
+      <div class="card card-purple">
+        <div class="section-title">Skill Category Breakdown</div>
+        <div class="chart-wrap"><canvas id="chartSkillCategory"></canvas></div>
+      </div>
+    </div>
+    <!-- Skill Movers (rising vs declining) -->
+    <div class="movers-grid" id="skillMoversRow">
+      <div class="card" style="border-top:2px solid var(--green)">
+        <div class="movers-col-title" style="color:var(--green)">⬆ Rising Skills <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">7d acceleration</span></div>
+        <div id="risingMoversWrap"><div class="skeleton" style="height:160px"></div></div>
+      </div>
+      <div class="card" style="border-top:2px solid var(--red)">
+        <div class="movers-col-title" style="color:var(--red)">⬇ Declining Skills <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">cooling demand</span></div>
+        <div id="decliningMoversWrap"><div class="skeleton" style="height:160px"></div></div>
+      </div>
+    </div>
+
+    <div class="card card-green mb20">
+      <div class="section-title">Momentum Leaders <span class="badge">Ranked by demand</span></div>
+      <div id="momentumTableFull"><div class="skeleton" style="height:240px"></div></div>
+    </div>
+    <div class="card card-amber mb20">
+      <div class="section-title">Skills Heatmap <span class="badge">Skill × Family</span></div>
+      <div id="heatmapWrap"><div class="skeleton" style="height:200px"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ───── PAGE: JOB EXPLORER ───── -->
+<div class="page" id="page-jobs">
+  <div class="topbar">
+    <div class="topbar-title">Job Explorer</div>
+  </div>
+  <div style="padding:24px 28px">
+    <div class="filter-bar">
+      <input type="text" class="form-input filter-search" id="jobSearch" placeholder="Search jobs, companies, skills…" onkeydown="if(event.key==='Enter')searchJobs()" />
+      <select class="form-select" id="jobFamily" style="width:180px">
+        <option value="">All Families</option>
+        <option>Data Engineering</option>
+        <option>Data Science</option>
+        <option>ML Engineering</option>
+        <option>Software Engineering</option>
+        <option>Product Management</option>
+        <option>Design</option>
+        <option>Marketing</option>
+        <option>Operations</option>
+        <option>Sales</option>
+        <option>Finance</option>
+        <option>HR</option>
+        <option>Other</option>
+      </select>
+      <select class="form-select" id="jobModality" style="width:130px">
+        <option value="">Any Modality</option>
+        <option value="remote">Remote</option>
+        <option value="hybrid">Hybrid</option>
+        <option value="onsite">On-site</option>
+      </select>
+      <select class="form-select" id="jobSeniority" style="width:130px">
+        <option value="">Any Level</option>
+        <option value="intern">Intern</option>
+        <option value="junior">Junior</option>
+        <option value="mid">Mid</option>
+        <option value="senior">Senior</option>
+        <option value="staff">Staff</option>
+        <option value="principal">Principal</option>
+        <option value="executive">Executive</option>
+      </select>
+      <select class="form-select" id="jobCountry" style="width:140px" onchange="searchJobs()">
+        <option value="">🌍 Global</option>
+        <option value="US">🇺🇸 United States</option>
+        <option value="GB">🇬🇧 United Kingdom</option>
+        <option value="DE">🇩🇪 Germany</option>
+        <option value="CA">🇨🇦 Canada</option>
+        <option value="AU">🇦🇺 Australia</option>
+        <option value="IN">🇮🇳 India</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="searchJobs()">Search</button>
+    </div>
+    <!-- Active filter chips -->
+    <div class="filter-chips" id="activeFilterChips"></div>
+    <!-- Sort bar -->
+    <div class="sort-bar">
+      <span class="sort-label">Sort:</span>
+      <select class="form-select" id="jobSort" style="width:170px" onchange="searchJobs()">
+        <option value="newest">Newest First</option>
+        <option value="oldest">Oldest First</option>
+        <option value="salary_high">Salary: High → Low</option>
+        <option value="salary_low">Salary: Low → High</option>
+      </select>
+    </div>
+    <div class="results-count" id="jobsCount"></div>
+    <div class="job-list" id="jobList"><div class="skeleton" style="height:80px"></div><div class="skeleton" style="height:80px;margin-top:10px"></div><div class="skeleton" style="height:80px;margin-top:10px"></div></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:24px" id="paginationBar"></div>
+  </div>
+</div>
+
+<!-- ───── PAGE: COMPANIES ───── -->
+<div class="page" id="page-companies">
+  <div class="topbar">
+    <div class="topbar-title">Companies</div>
+  </div>
+  <div style="padding:24px 28px">
+    <div class="filter-bar" style="margin-bottom:12px">
+      <input type="text" class="form-input filter-search" id="companySearch" placeholder="Search companies…" oninput="applyCompanyFilters()" />
+      <select class="form-select" id="companyIndustry" style="width:180px" onchange="applyCompanyFilters()">
+        <option value="">All Industries</option>
+      </select>
+      <select class="form-select" id="companySort" style="width:190px" onchange="applyCompanyFilters()">
+        <option value="active">Most Active Jobs</option>
+        <option value="velocity">Highest Velocity</option>
+        <option value="alpha">A → Z</option>
+      </select>
+    </div>
+    <div class="results-count" id="companiesCount"></div>
+    <div class="company-grid" id="companyGrid"><div class="skeleton" style="height:160px;grid-column:span 3"></div></div>
+  </div>
+</div>
+
+<!-- Company Drawer -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="companyDrawer">
+  <div class="drawer-header">
+    <div>
+      <div id="drawerName" style="font-size:18px;font-weight:700;color:var(--text)"></div>
+      <div id="drawerMeta" style="font-size:12px;color:var(--text3);margin-top:3px"></div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div id="drawerBody"><div class="skeleton" style="height:300px"></div></div>
+</div>
+
+<!-- ───── PAGE: AI INSIGHTS ───── -->
+<div class="page" id="page-ai">
+  <div class="topbar">
+    <div class="topbar-title">AI Insights</div>
+  </div>
+  <div style="padding:24px 28px">
+    <div class="ai-hero">
+      <div class="ai-hero-title">✨ Ask the Market</div>
+      <div class="ai-hero-sub" id="aiHeroSub">Use AI to surface trends, patterns, and opportunities across the job market.</div>
+      <div class="ai-search-row">
+        <input type="text" class="form-input ai-search-input" id="aiQuery" placeholder="e.g. What skills are most in demand for remote ML roles?" />
+        <select class="form-select" id="aiWindow" style="width:130px">
+          <option value="7">Last 7d</option>
+          <option value="30" selected>Last 30d</option>
+          <option value="90">Last 90d</option>
+        </select>
+        <select class="form-select" id="aiFamily" style="width:170px">
+          <option value="">All Families</option>
+          <option>Data Engineering</option>
+          <option>Data Science</option>
+          <option>ML Engineering</option>
+          <option>Software Engineering</option>
+          <option>Product Management</option>
+        </select>
+        <button class="btn btn-primary" onclick="runAiQuery()">Analyze</button>
+      </div>
+      <div class="chip-row" id="aiChips">
+        <div class="chip" onclick="setAiChip(this)">Top 3 market trends right now</div>
+        <div class="chip" onclick="setAiChip(this)">Which skills have the highest demand growth?</div>
+        <div class="chip" onclick="setAiChip(this)">What is the salary range for senior engineers?</div>
+        <div class="chip" onclick="setAiChip(this)">Which companies are hiring aggressively?</div>
+        <div class="chip" onclick="setAiChip(this)">Senior vs junior role distribution breakdown</div>
+        <div class="chip" onclick="setAiChip(this)">What remote roles are most available?</div>
+        <div class="chip" onclick="setAiChip(this)">Compare data engineering vs data science demand</div>
+        <div class="chip" onclick="setAiChip(this)">What skills should I learn for the best job prospects?</div>
+      </div>
+    </div>
+    <div class="card mb20">
+      <div class="section-title">Analysis Result</div>
+      <div class="ai-result" id="aiResultBox">
+        <div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">Enter a question above and click Analyze.</div>
+      </div>
+      <div id="aiResultMeta" style="margin-top:12px;display:none"></div>
+    </div>
+
+    <div class="section-title" style="margin-bottom:14px">Auto-Generated Insights</div>
+    <div class="grid-3" id="autoInsightCards">
+      <div class="card card-accent"><div class="section-title" style="font-size:13px">📊 Top Skills Right Now</div><div id="autoCard1"><div class="skeleton" style="height:120px"></div></div></div>
+      <div class="card card-green"><div class="section-title" style="font-size:13px">🏆 Hiring Leaders</div><div id="autoCard2"><div class="skeleton" style="height:120px"></div></div></div>
+      <div class="card card-purple"><div class="section-title" style="font-size:13px">🌐 Market Summary</div><div id="autoCard3"><div class="skeleton" style="height:120px"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ───── PAGE: DATASETS ───── -->
+<div class="page" id="page-datasets">
+  <div class="topbar">
+    <div class="topbar-title">Data Catalog</div>
+  </div>
+  <div style="padding:24px 28px">
+    <div class="dataset-card">
+      <div class="dataset-header">
+        <div>
+          <div class="dataset-title">📋 Job Postings</div>
+          <div class="dataset-desc">Raw job posting data ingested from 3 sources. Includes title, company, modality, seniority, skills, salary, and description fields.</div>
+          <div class="dataset-meta">
+            <span class="pill pill-blue" id="dsJobCount">— records</span>
+            <span class="pill pill-gray" id="dsSourceCount">— sources</span>
+            <span class="freshness"><span class="freshness-dot"></span><span id="dsFreshness">Updated recently</span></span>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="toggleSchema('schema1')">View Schema</button>
+      </div>
+      <div class="schema-box" id="schema1">
+        <div class="schema-row"><span class="schema-col">id</span><span class="schema-type">UUID</span><span class="schema-desc">Primary key</span></div>
+        <div class="schema-row"><span class="schema-col">title</span><span class="schema-type">VARCHAR(255)</span><span class="schema-desc">Job title as posted</span></div>
+        <div class="schema-row"><span class="schema-col">company_id</span><span class="schema-type">UUID FK</span><span class="schema-desc">References companies.id</span></div>
+        <div class="schema-row"><span class="schema-col">title_family</span><span class="schema-type">VARCHAR(50)</span><span class="schema-desc">Normalized role family</span></div>
+        <div class="schema-row"><span class="schema-col">modality</span><span class="schema-type">ENUM</span><span class="schema-desc">remote | hybrid | onsite</span></div>
+        <div class="schema-row"><span class="schema-col">seniority</span><span class="schema-type">ENUM</span><span class="schema-desc">junior | mid | senior | lead</span></div>
+        <div class="schema-row"><span class="schema-col">skills</span><span class="schema-type">TEXT[]</span><span class="schema-desc">Extracted skill tags</span></div>
+        <div class="schema-row"><span class="schema-col">salary_min</span><span class="schema-type">NUMERIC</span><span class="schema-desc">Min annual salary USD</span></div>
+        <div class="schema-row"><span class="schema-col">salary_max</span><span class="schema-type">NUMERIC</span><span class="schema-desc">Max annual salary USD</span></div>
+        <div class="schema-row"><span class="schema-col">posted_at</span><span class="schema-type">TIMESTAMPTZ</span><span class="schema-desc">UTC timestamp of posting</span></div>
+        <div class="schema-row"><span class="schema-col">source</span><span class="schema-type">VARCHAR(50)</span><span class="schema-desc">Ingestion source name</span></div>
+        <div class="schema-row"><span class="schema-col">url</span><span class="schema-type">TEXT</span><span class="schema-desc">Original posting URL</span></div>
+      </div>
+    </div>
+
+    <div class="dataset-card">
+      <div class="dataset-header">
+        <div>
+          <div class="dataset-title">📈 Skill Trends</div>
+          <div class="dataset-desc">Aggregated daily skill demand metrics. Tracks posting share, MoM change, YoY change, and rank per skill across role families.</div>
+          <div class="dataset-meta">
+            <span class="pill pill-green" id="dsSkillCount">— skills</span>
+            <span class="pill pill-gray" id="dsFamilyCount">— families</span>
+            <span class="freshness"><span class="freshness-dot"></span>Updated daily</span>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="toggleSchema('schema2')">View Schema</button>
+      </div>
+      <div class="schema-box" id="schema2">
+        <div class="schema-row"><span class="schema-col">skill_name</span><span class="schema-type">VARCHAR(100)</span><span class="schema-desc">Normalized skill name</span></div>
+        <div class="schema-row"><span class="schema-col">skill_category</span><span class="schema-type">VARCHAR(50)</span><span class="schema-desc">Skill category group</span></div>
+        <div class="schema-row"><span class="schema-col">title_family</span><span class="schema-type">VARCHAR(50)</span><span class="schema-desc">Role family filter</span></div>
+        <div class="schema-row"><span class="schema-col">posting_count</span><span class="schema-type">INTEGER</span><span class="schema-desc">Jobs requiring this skill</span></div>
+        <div class="schema-row"><span class="schema-col">posting_share</span><span class="schema-type">FLOAT</span><span class="schema-desc">% of all postings</span></div>
+        <div class="schema-row"><span class="schema-col">mom_change</span><span class="schema-type">FLOAT</span><span class="schema-desc">Month-over-month delta</span></div>
+        <div class="schema-row"><span class="schema-col">yoy_change</span><span class="schema-type">FLOAT</span><span class="schema-desc">Year-over-year delta</span></div>
+        <div class="schema-row"><span class="schema-col">rank</span><span class="schema-type">INTEGER</span><span class="schema-desc">Demand rank (1 = highest)</span></div>
+        <div class="schema-row"><span class="schema-col">window_days</span><span class="schema-type">INTEGER</span><span class="schema-desc">Aggregation window</span></div>
+        <div class="schema-row"><span class="schema-col">computed_at</span><span class="schema-type">TIMESTAMPTZ</span><span class="schema-desc">Last aggregation run</span></div>
+      </div>
+    </div>
+
+    <div class="dataset-card">
+      <div class="dataset-header">
+        <div>
+          <div class="dataset-title">🏢 Company Signals</div>
+          <div class="dataset-desc">Company-level hiring velocity, top roles, skill demand, and activity trends. Updated every 6 hours from posting data.</div>
+          <div class="dataset-meta">
+            <span class="pill pill-purple" id="dsCompanyCount">— companies</span>
+            <span class="pill pill-gray">Hiring velocity + salary</span>
+            <span class="freshness"><span class="freshness-dot"></span>Updated 6h ago</span>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="toggleSchema('schema3')">View Schema</button>
+      </div>
+      <div class="schema-box" id="schema3">
+        <div class="schema-row"><span class="schema-col">company_id</span><span class="schema-type">UUID</span><span class="schema-desc">Primary key</span></div>
+        <div class="schema-row"><span class="schema-col">name</span><span class="schema-type">VARCHAR(255)</span><span class="schema-desc">Company display name</span></div>
+        <div class="schema-row"><span class="schema-col">industry</span><span class="schema-type">VARCHAR(100)</span><span class="schema-desc">Industry classification</span></div>
+        <div class="schema-row"><span class="schema-col">stage</span><span class="schema-type">VARCHAR(50)</span><span class="schema-desc">startup | scaleup | enterprise</span></div>
+        <div class="schema-row"><span class="schema-col">country</span><span class="schema-type">VARCHAR(50)</span><span class="schema-desc">HQ country</span></div>
+        <div class="schema-row"><span class="schema-col">hiring_velocity</span><span class="schema-type">FLOAT</span><span class="schema-desc">0–100 normalized score</span></div>
+        <div class="schema-row"><span class="schema-col">active_jobs</span><span class="schema-type">INTEGER</span><span class="schema-desc">Open positions count</span></div>
+        <div class="schema-row"><span class="schema-col">top_skills</span><span class="schema-type">TEXT[]</span><span class="schema-desc">Most demanded skills</span></div>
+        <div class="schema-row"><span class="schema-col">top_roles</span><span class="schema-type">TEXT[]</span><span class="schema-desc">Most posted role families</span></div>
+        <div class="schema-row"><span class="schema-col">trend</span><span class="schema-type">ENUM</span><span class="schema-desc">growing | stable | declining</span></div>
+      </div>
+    </div>
+
+    <!-- Pipeline -->
+    <div class="card mb20">
+      <div class="section-title">Data Lineage</div>
+      <div class="pipeline">
+        <div class="pipeline-node source">RemoteOK API</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node source">Remotive API</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node source">Arbeitnow API</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node source">Adzuna API</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node">Ingestion Pipeline</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node">job_postings</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node">Aggregation</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node dest">skill_trends</div>
+        <div class="pipeline-arrow">+</div>
+        <div class="pipeline-node dest">company_signals</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node dest">FastAPI v1</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-node dest">Dashboard</div>
+      </div>
+    </div>
+
+    <!-- Sources table -->
+    <div class="card">
+      <div class="section-title">Data Sources</div>
+      <table class="sources-table">
+        <thead><tr><th>Source</th><th>Type</th><th>Status</th><th>Last Run</th><th>Records</th><th>Frequency</th></tr></thead>
+        <tbody id="datasetsSourcesBody">
+          <tr><td>RemoteOK</td><td>REST API</td><td><span class="pill pill-green">Active</span></td><td id="dsLastSync">—</td><td id="dsCntRemoteok">—</td><td>Daily</td></tr>
+          <tr><td>Remotive</td><td>REST API</td><td><span class="pill pill-green">Active</span></td><td id="dsLastSync2">—</td><td id="dsCntRemotive">—</td><td>Daily</td></tr>
+          <tr><td>Arbeitnow</td><td>REST API</td><td><span class="pill pill-green">Active</span></td><td id="dsLastSync3">—</td><td id="dsCntArbeitnow">—</td><td>Daily</td></tr>
+          <tr><td>Adzuna</td><td>REST API</td><td><span class="pill pill-green">Active</span></td><td id="dsLastSync4">—</td><td id="dsCntAdzuna">—</td><td>Daily</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ───── PAGE: API EXPLORER ───── -->
+<div class="page" id="page-apiexplorer">
+  <div class="topbar">
+    <div class="topbar-title">Developer API</div>
+  </div>
+  <div style="padding:24px 28px">
+    <div class="card mb20" style="display:flex;flex-direction:row;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px">Base URL</div>
+        <code style="font-size:14px;color:var(--accent);font-family:'Courier New',monospace" id="baseUrlCode"></code>
+        <script>document.getElementById('baseUrlCode').textContent = window.location.origin + '/v1'</script>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="copyBaseUrl()">📋 Copy</button>
+    </div>
+
+    <!-- /jobs -->
+    <div class="endpoint-card">
+      <div class="endpoint-header">
+        <span class="method-badge method-get">GET</span>
+        <span class="endpoint-path">/v1/jobs</span>
+      </div>
+      <div class="endpoint-desc">List job postings with optional filtering by title family, modality, seniority, and full-text search.</div>
+      <table class="params-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="param-name">page_size</span></td><td><span class="param-type">integer</span></td><td>25</td><td>Results per page</td></tr>
+          <tr><td><span class="param-name">title_family</span></td><td><span class="param-type">string</span></td><td>—</td><td>Filter by role family</td></tr>
+          <tr><td><span class="param-name">modality</span></td><td><span class="param-type">string</span></td><td>—</td><td>remote | hybrid | onsite</td></tr>
+          <tr><td><span class="param-name">seniority</span></td><td><span class="param-type">string</span></td><td>—</td><td>junior | mid | senior | lead</td></tr>
+          <tr><td><span class="param-name">q</span></td><td><span class="param-type">string</span></td><td>—</td><td>Full-text search query</td></tr>
+        </tbody>
+      </table>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost btn-xs" onclick="tryEndpoint('jobs', this)">▶ Try it</button>
+        <span style="font-size:11px;color:var(--text3)">GET /v1/jobs?page_size=3</span>
+      </div>
+      <div class="code-block" id="resp-jobs"></div>
+    </div>
+
+    <!-- /skills/trends -->
+    <div class="endpoint-card">
+      <div class="endpoint-header">
+        <span class="method-badge method-get">GET</span>
+        <span class="endpoint-path">/v1/skills/trends</span>
+      </div>
+      <div class="endpoint-desc">Aggregated skill demand metrics including posting share, MoM change, YoY change, and ranking.</div>
+      <table class="params-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="param-name">window</span></td><td><span class="param-type">integer</span></td><td>30</td><td>Lookback window in days</td></tr>
+          <tr><td><span class="param-name">title_family</span></td><td><span class="param-type">string</span></td><td>—</td><td>Filter by role family</td></tr>
+          <tr><td><span class="param-name">limit</span></td><td><span class="param-type">integer</span></td><td>25</td><td>Max results</td></tr>
+          <tr><td><span class="param-name">order_by</span></td><td><span class="param-type">string</span></td><td>posting_count</td><td>Sort field</td></tr>
+        </tbody>
+      </table>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost btn-xs" onclick="tryEndpoint('skills', this)">▶ Try it</button>
+        <span style="font-size:11px;color:var(--text3)">GET /v1/skills/trends?window=30&limit=5</span>
+      </div>
+      <div class="code-block" id="resp-skills"></div>
+    </div>
+
+    <!-- /companies -->
+    <div class="endpoint-card">
+      <div class="endpoint-header">
+        <span class="method-badge method-get">GET</span>
+        <span class="endpoint-path">/v1/companies</span>
+      </div>
+      <div class="endpoint-desc">List companies with active job postings. Supports full-text search.</div>
+      <table class="params-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="param-name">page_size</span></td><td><span class="param-type">integer</span></td><td>50</td><td>Results per page</td></tr>
+          <tr><td><span class="param-name">q</span></td><td><span class="param-type">string</span></td><td>—</td><td>Search by company name</td></tr>
+        </tbody>
+      </table>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost btn-xs" onclick="tryEndpoint('companies', this)">▶ Try it</button>
+        <span style="font-size:11px;color:var(--text3)">GET /v1/companies?page_size=3</span>
+      </div>
+      <div class="code-block" id="resp-companies"></div>
+    </div>
+
+    <!-- /insights -->
+    <div class="endpoint-card">
+      <div class="endpoint-header">
+        <span class="method-badge method-get">GET</span>
+        <span class="endpoint-path">/v1/insights</span>
+      </div>
+      <div class="endpoint-desc">AI-powered market analysis. Ask any question about the job market and receive a structured LLM analysis with source citations.</div>
+      <table class="params-table">
+        <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="param-name">q</span></td><td><span class="param-type">string</span></td><td>required</td><td>Natural language question</td></tr>
+          <tr><td><span class="param-name">window</span></td><td><span class="param-type">integer</span></td><td>30</td><td>Data window in days</td></tr>
+          <tr><td><span class="param-name">title_family</span></td><td><span class="param-type">string</span></td><td>—</td><td>Filter context by family</td></tr>
+        </tbody>
+      </table>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost btn-xs" onclick="tryEndpoint('insights', this)">▶ Try it</button>
+        <span style="font-size:11px;color:var(--text3)">GET /v1/insights?q=top+skills&window=30</span>
+      </div>
+      <div class="code-block" id="resp-insights"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main-area -->
+</div><!-- /shell -->
+
+<script>
+// ══════════════════════════════════════════════
+//  Constants & Config
+// ══════════════════════════════════════════════
+const API = window.location.origin + '/v1'
+const PALETTE = ['#4f8ef7','#10b981','#8b5cf6','#f59e0b','#ef4444','#06b6d4','#ec4899','#84cc16','#f97316','#a78bfa','#34d399','#fb923c']
+const FAMILIES = ['Data Engineering','Data Science','ML Engineering','Software Engineering','Product Management','Design','Marketing','Operations','Sales','Finance','HR','Other']
+const LOADED = {}
+let jobsPage = { cursor: null, loading: false, filters: {} }
+let allCompanies = []
+let charts = {}
+let selectedCountry = ''
+let _statsCache = null
+
+Chart.defaults.color = '#94a3b8'
+Chart.defaults.borderColor = '#1e2d45'
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif'
+Chart.defaults.font.size = 12
+
+// ══════════════════════════════════════════════
+//  Utilities
+// ══════════════════════════════════════════════
+async function apiFetch(path) {
+  const r = await fetch(API + path)
+  if (!r.ok) throw new Error(`HTTP ${r.status}`)
+  return r.json()
+}
+
+function momBadge(v) {
+  if (v == null) return '<span style="color:var(--text3)">—</span>'
+  const s = (v * 100).toFixed(1)
+  const abs = Math.abs(parseFloat(s))
+  if (v > 0.001) return `<span style="color:var(--green);font-weight:600">▲ ${s}%</span>`
+  if (v < -0.001) return `<span style="color:var(--red);font-weight:600">▼ ${abs}%</span>`
+  return `<span style="color:var(--text3)">— ${s}%</span>`
+}
+
+function sparkline(current, prev) {
+  if (!prev && prev !== 0) return ''
+  const h = 24, w = 40
+  const y1 = prev > current ? 4 : h - 4
+  const y2 = prev > current ? h - 4 : 4
+  const color = current >= prev ? '#10b981' : '#ef4444'
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <polyline points="0,${y1} ${w},${y2}" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <circle cx="${w}" cy="${y2}" r="2.5" fill="${color}"/>
+  </svg>`
+}
+
+function catColor(cat) {
+  const map = { 'Cloud': '#4f8ef7', 'Languages': '#10b981', 'ML/AI': '#8b5cf6', 'Data': '#f59e0b', 'DevOps': '#06b6d4', 'Analytics': '#ec4899', 'Soft Skills': '#84cc16', 'Databases': '#f97316', 'Frameworks': '#a78bfa', 'Tools': '#34d399' }
+  return map[cat] || '#4f8ef7'
+}
+
+function destroyChart(key) {
+  if (charts[key]) { charts[key].destroy(); delete charts[key] }
+}
+
+function renderMarkdown(text) {
+  if (!text) return ''
+  function bold(s) { return s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }
+  const lines = text.split('\n')
+  const out = []
+  for (const raw of lines) {
+    const line = raw.trimEnd()
+    if (!line) continue
+    if (/^#{1,3}\s/.test(line)) {
+      out.push(`<div style="font-size:14px;font-weight:700;color:var(--text);margin:10px 0 2px">${bold(line.replace(/^#{1,3}\s+/, ''))}</div>`)
+    } else if (/^\d+\.\s/.test(line)) {
+      out.push(`<div style="margin:3px 0 3px 16px;color:var(--text2)"><span style="color:var(--accent);font-weight:600;margin-right:6px">•</span>${bold(line.replace(/^\d+\.\s+/, ''))}</div>`)
+    } else if (/^[-•]\s/.test(line)) {
+      out.push(`<div style="margin:2px 0 2px 16px;color:var(--text2)"><span style="color:var(--text3);margin-right:6px">›</span>${bold(line.replace(/^[-•]\s+/, ''))}</div>`)
+    } else {
+      out.push(`<div style="margin:2px 0">${bold(line)}</div>`)
+    }
+  }
+  return out.join('')
+}
+
+function syntaxHighlightJSON(json) {
+  if (typeof json !== 'string') json = JSON.stringify(json, null, 2)
+  return json
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, m => {
+      let cls = 'json-num'
+      if (/^"/.test(m)) { if (/:$/.test(m)) cls = 'json-key'; else cls = 'json-str' }
+      else if (/true|false/.test(m)) cls = 'json-bool'
+      else if (/null/.test(m)) cls = 'json-null'
+      return `<span class="${cls}">${m}</span>`
+    })
+}
+
+function toggleSchema(id) {
+  const el = document.getElementById(id)
+  el.classList.toggle('open')
+}
+
+function copyBaseUrl() {
+  navigator.clipboard.writeText(window.location.origin + '/v1')
+  const btn = event.target; btn.textContent = '✓ Copied'; setTimeout(() => { btn.textContent = '📋 Copy' }, 1500)
+}
+
+function pillColor(tag) {
+  const t = (tag||'').toLowerCase()
+  if (t === 'remote') return 'pill-green'
+  if (t === 'hybrid') return 'pill-amber'
+  if (t === 'onsite' || t === 'on-site') return 'pill-red'
+  if (t === 'senior' || t === 'lead') return 'pill-purple'
+  if (t === 'junior') return 'pill-cyan'
+  return 'pill-blue'
+}
+
+function fmtDate(s) {
+  if (!s) return ''
+  try { return new Date(s).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) }
+  catch { return s }
+}
+
+// ══════════════════════════════════════════════
+//  Navigation
+// ══════════════════════════════════════════════
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const pg = item.dataset.page
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'))
+    item.classList.add('active')
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+    document.getElementById('page-' + pg).classList.add('active')
+    if (!LOADED[pg]) {
+      LOADED[pg] = true
+      const inits = { overview: initOverview, skills: initSkills, jobs: initJobs, companies: initCompanies, ai: initAI, datasets: () => {}, apiexplorer: () => {} }
+      if (inits[pg]) inits[pg]()
+    }
+  })
+})
+
+// ══════════════════════════════════════════════
+//  PAGE: OVERVIEW
+// ══════════════════════════════════════════════
+function buildKpiSparkSVG(points, color) {
+  if (!points || points.length < 2) return ''
+  const w = 80, h = 28, pad = 2
+  const vals = points.map(p => p.postings)
+  const mx = Math.max(...vals) || 1
+  const mn = Math.min(...vals)
+  const xs = points.map((_, i) => pad + (i / (points.length - 1)) * (w - 2 * pad))
+  const ys = vals.map(v => h - pad - ((v - mn) / (mx - mn || 1)) * (h - 2 * pad))
+  const pts = xs.map((x, i) => `${x},${ys[i]}`).join(' ')
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" class="kpi-spark">
+    <polyline points="${pts}" stroke="${color}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+    <circle cx="${xs[xs.length-1]}" cy="${ys[ys.length-1]}" r="2.5" fill="${color}"/>
+  </svg>`
+}
+
+async function loadKPIs() {
+  try {
+    const statsUrl = '/stats' + (selectedCountry ? `?country=${encodeURIComponent(selectedCountry)}` : '')
+    const histUrl  = '/stats/history?days=60' + (selectedCountry ? `&country=${encodeURIComponent(selectedCountry)}` : '')
+    const [s, hist] = await Promise.all([apiFetch(statsUrl), apiFetch(histUrl).catch(() => ({ data: [] }))])
+    _statsCache = s
+    const fmt = n => n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n)
+    const activeRatio = s.total_postings > 0 ? Math.round(s.active_postings / s.total_postings * 100) : 0
+    const srcCount = s.sources ? Object.keys(s.sources).length : 0
+    const topMod = s.modality_breakdown ? Object.entries(s.modality_breakdown).sort((a,b)=>b[1]-a[1])[0] : null
+    const histPts = (hist.data || [])
+
+    // Trend direction from history
+    const histFirst = histPts[0]?.postings || 0
+    const histLast  = histPts[histPts.length-1]?.postings || histFirst
+    const histTrend = histLast > histFirst ? 'trend-up' : histLast < histFirst ? 'trend-down' : 'trend-flat'
+    const histSymbol = histLast > histFirst ? '▲' : histLast < histFirst ? '▼' : '—'
+    const histPct = histFirst > 0 ? Math.abs(Math.round((histLast - histFirst) / histFirst * 100)) : 0
+
+    document.getElementById('kpi-row').innerHTML = `
+      <div class="kpi-card kpi-c1"><span class="kpi-icon">📋</span><div class="kpi-value">${fmt(s.total_postings)}</div><div class="kpi-label">Total Postings</div><div class="kpi-trend ${histTrend}">${histSymbol} ${histPct}% · ${srcCount} sources</div>${buildKpiSparkSVG(histPts,'#4f8ef7')}</div>
+      <div class="kpi-card kpi-c2"><span class="kpi-icon">🛠️</span><div class="kpi-value">${fmt(s.unique_skills)}</div><div class="kpi-label">Unique Skills</div><div class="kpi-trend trend-up">▲ Tracked across all roles</div></div>
+      <div class="kpi-card kpi-c3"><span class="kpi-icon">🏢</span><div class="kpi-value">${fmt(s.companies_hiring)}</div><div class="kpi-label">Companies Hiring</div><div class="kpi-trend trend-flat">${s.top_family ? '🏆 ' + s.top_family : '—'}</div></div>
+      <div class="kpi-card kpi-c4"><span class="kpi-icon">🗂️</span><div class="kpi-value">${s.role_families}</div><div class="kpi-label">Role Families</div><div class="kpi-trend trend-flat">${s.salary_coverage_pct}% salary data${topMod ? ' · '+topMod[0] : ''}</div></div>
+    `
+
+    // Update sidebar live badge
+    const syncDate = s.last_ingested
+      ? new Date(s.last_ingested).toLocaleDateString('en-US', {month:'short', day:'numeric'})
+      : '—'
+    const liveEl = document.getElementById('liveSyncText')
+    if (liveEl) liveEl.textContent = `Live · ${syncDate}`
+
+    // Update overview topbar meta
+    const regionLabel = selectedCountry ? ` · ${selectedCountry}` : ''
+    const metaEl = document.getElementById('overviewTopbarMeta')
+    if (metaEl) metaEl.textContent = `Data as of ${syncDate} · ${s.total_postings.toLocaleString()} postings${regionLabel}`
+
+    // Update datasets page live fields
+    const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val }
+    setEl('dsJobCount', `${s.total_postings.toLocaleString()} records`)
+    setEl('dsSourceCount', `${srcCount} sources`)
+    setEl('dsSkillCount', `${s.unique_skills} skills`)
+    setEl('dsFamilyCount', `${s.role_families} families`)
+    setEl('dsCompanyCount', `${s.companies_hiring} companies`)
+    setEl('dsFreshness', `Updated ${syncDate}`)
+    if (s.last_ingested) {
+      const syncStr = new Date(s.last_ingested).toLocaleString('en-US', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) + ' UTC'
+      ;['dsLastSync','dsLastSync2','dsLastSync3','dsLastSync4'].forEach(id => setEl(id, syncStr))
+    }
+    // Source record counts
+    if (s.sources) {
+      setEl('dsCntRemoteok',  s.sources['remoteok']  || '—')
+      setEl('dsCntRemotive',  s.sources['remotive']  || '—')
+      setEl('dsCntArbeitnow', s.sources['arbeitnow'] || '—')
+      setEl('dsCntAdzuna',    s.sources['adzuna']    || '—')
+    }
+
+    // Update AI hero sub
+    const aiSub = document.getElementById('aiHeroSub')
+    if (aiSub) aiSub.textContent = `Use AI to surface trends, patterns, and opportunities across ${s.total_postings.toLocaleString()} job postings${regionLabel}.`
+
+    // Update country pill in topbar
+    const pillEl = document.getElementById('overviewCountryPill')
+    if (pillEl) pillEl.innerHTML = selectedCountry ? `<span class="country-active-pill">🌍 ${selectedCountry}</span>` : ''
+
+  } catch(e) { console.warn('KPI load failed', e) }
+}
+
+async function initOverview() {
+  // Reset KPI skeletons
+  document.getElementById('kpi-row').innerHTML = `
+    <div class="kpi-card kpi-c1"><div class="skeleton" style="height:32px;width:80px"></div><div class="skeleton" style="height:12px;width:100px;margin-top:8px"></div></div>
+    <div class="kpi-card kpi-c2"><div class="skeleton" style="height:32px;width:60px"></div><div class="skeleton" style="height:12px;width:80px;margin-top:8px"></div></div>
+    <div class="kpi-card kpi-c3"><div class="skeleton" style="height:32px;width:70px"></div><div class="skeleton" style="height:12px;width:90px;margin-top:8px"></div></div>
+    <div class="kpi-card kpi-c4"><div class="skeleton" style="height:32px;width:50px"></div><div class="skeleton" style="height:12px;width:110px;margin-top:8px"></div></div>
+  `
+  document.getElementById('risingSkillsWrap').innerHTML = '<div class="skeleton" style="height:140px"></div>'
+  document.getElementById('hotCompaniesWrap').innerHTML = '<div class="skeleton" style="height:140px"></div>'
+  document.getElementById('autoInsightBody').innerHTML = '<div class="skeleton" style="height:14px;width:80%"></div><div class="skeleton" style="height:14px;width:60%;margin-top:8px"></div><div class="skeleton" style="height:14px;width:70%;margin-top:8px"></div>'
+  loadKPIs()
+  loadMarketPulse()
+  loadTopSkillsChart()
+  loadModalityChart()
+  loadTreemap()
+  loadMomentumTable()
+  loadAutoInsight()
+}
+
+async function loadMarketPulse() {
+  // Rising skills
+  try {
+    const cParam = selectedCountry ? `?country=${encodeURIComponent(selectedCountry)}` : ''
+    const d = await apiFetch(`/skills/movers${cParam}`)
+    const rising = (d.data?.rising || []).slice(0, 6)
+    const risingEl = document.getElementById('risingSkillsWrap')
+    if (!rising.length) {
+      risingEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:20px;text-align:center">Momentum data builds up after multiple ingestion runs</div>'
+    } else {
+      risingEl.innerHTML = rising.map(s => {
+        const pct = s.momentum ? ((s.momentum - 1) * 100).toFixed(0) : 0
+        return `<div class="mover-row">
+          <span class="mover-name">${s.skill_name}</span>
+          <span class="mover-badge mover-up">+${pct}% ⬆</span>
+        </div>`
+      }).join('')
+    }
+  } catch(e) {
+    document.getElementById('risingSkillsWrap').innerHTML = '<div style="color:var(--text3);font-size:12px;padding:10px">Unavailable</div>'
+  }
+
+  // Hot companies by velocity
+  try {
+    const cParam = selectedCountry ? `&country=${encodeURIComponent(selectedCountry)}` : ''
+    const d = await apiFetch(`/companies?page_size=20${cParam}`)
+    const byVel = (d.data||[])
+      .filter(c => (c.hiring_velocity_score||0) > 0 || (c.active_jobs||0) > 0)
+      .sort((a,b) => (b.hiring_velocity_score||0) - (a.hiring_velocity_score||0))
+      .slice(0, 6)
+    const hotEl = document.getElementById('hotCompaniesWrap')
+    if (!byVel.length) {
+      hotEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:20px;text-align:center">No company data</div>'
+    } else {
+      hotEl.innerHTML = byVel.map(c => {
+        const vel = Math.round(c.hiring_velocity_score || 0)
+        const jobs = c.active_jobs || 0
+        const velColor = vel > 60 ? 'var(--green)' : vel > 30 ? 'var(--amber)' : 'var(--accent)'
+        return `<div class="mover-row">
+          <span class="mover-name">${c.company_name || '—'}</span>
+          <span style="font-size:11px;color:var(--text3)">${jobs} jobs <span style="color:${velColor};font-weight:700">⚡${vel}</span></span>
+        </div>`
+      }).join('')
+    }
+  } catch(e) {
+    document.getElementById('hotCompaniesWrap').innerHTML = '<div style="color:var(--text3);font-size:12px;padding:10px">Unavailable</div>'
+  }
+}
+
+async function loadTopSkillsChart() {
+  try {
+    const cParam = selectedCountry ? `&country=${encodeURIComponent(selectedCountry)}` : ''
+    const data = await apiFetch(`/skills/trends?window=30&limit=15&order_by=posting_count${cParam}`)
+    const skills = (data.data || []).slice(0, 15)
+    destroyChart('topSkills')
+    const ctx = document.getElementById('chartTopSkills').getContext('2d')
+    charts.topSkills = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: skills.map(s => s.skill_name),
+        datasets: [{
+          data: skills.map(s => s.posting_count),
+          backgroundColor: skills.map((s, i) => PALETTE[i % PALETTE.length] + 'cc'),
+          borderColor: skills.map((s, i) => PALETTE[i % PALETTE.length]),
+          borderWidth: 1, borderRadius: 3, barThickness: 11
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: gc() }, ticks: { color: tc(), font: { size: 10 } } },
+          y: { grid: { display: false }, ticks: { color: ytc(), font: { size: 10 } } }
+        }
+      }
+    })
+  } catch(e) { document.getElementById('chartTopSkills').parentElement.innerHTML = '<div style="color:var(--text3);text-align:center;padding:40px;font-size:12px">Could not load skill data</div>' }
+}
+
+async function loadModalityChart() {
+  try {
+    // Reuse cached stats from loadKPIs if available; otherwise fetch fresh
+    const stats = _statsCache || await apiFetch('/stats' + (selectedCountry ? `?country=${encodeURIComponent(selectedCountry)}` : ''))
+    const counts = stats.modality_breakdown || {}
+    const MODALITY_COLORS = { remote: '#4f8ef7', hybrid: '#a78bfa', onsite: '#10b981' }
+    const labels = Object.keys(counts)
+    const vals   = Object.values(counts)
+    destroyChart('modality')
+    const ctx = document.getElementById('chartModality').getContext('2d')
+    const total = vals.reduce((a, b) => a + b, 0)
+    charts.modality = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+        datasets: [{
+          data: vals,
+          backgroundColor: labels.map((l, i) => (MODALITY_COLORS[l] || PALETTE[i % PALETTE.length]) + 'cc'),
+          borderColor:     labels.map((l, i) =>  MODALITY_COLORS[l] || PALETTE[i % PALETTE.length]),
+          borderWidth: 2,
+          hoverOffset: 6,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 12, boxWidth: 11, font: { size: 11 }, color: tc() } },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const pct = total ? ((ctx.raw / total) * 100).toFixed(1) : 0
+                return ` ${ctx.label}: ${ctx.raw.toLocaleString()} (${pct}%)`
+              }
+            }
+          }
+        }
+      }
+    })
+  } catch(e) { document.getElementById('chartModality').parentElement.innerHTML = '<div style="color:var(--text3);text-align:center;padding:40px;font-size:12px">Could not load modality data</div>' }
+}
+
+async function loadTreemap() {
+  const el = document.getElementById('treemapGrid')
+  try {
+    // Fetch skills per family to estimate job counts
+    const cParam = selectedCountry ? `&country=${encodeURIComponent(selectedCountry)}` : ''
+    const results = await Promise.allSettled(
+      FAMILIES.map(f => apiFetch(`/skills/trends?window=30&title_family=${encodeURIComponent(f)}&limit=1${cParam}`))
+    )
+    const counts = FAMILIES.map((f, i) => {
+      const r = results[i]
+      if (r.status === 'fulfilled' && r.value.data && r.value.data[0]) {
+        return { family: f, count: r.value.data[0].posting_count || 0 }
+      }
+      return { family: f, count: 0 }
+    }).filter(x => x.count > 0).sort((a,b) => b.count - a.count)
+
+    const total = counts.reduce((s,c) => s + c.count, 0) || 1
+
+    el.innerHTML = counts.map((c, i) => {
+      const pct = ((c.count / total) * 100).toFixed(1)
+      const bg = PALETTE[i % PALETTE.length]
+      return `<div class="treemap-cell" style="background:${bg}22;border:1px solid ${bg}44">
+        <div class="treemap-name" style="color:${bg}">${c.family}</div>
+        <div class="treemap-count" style="color:${bg}">${c.count}</div>
+        <div class="treemap-pct">${pct}% of demand</div>
+      </div>`
+    }).join('')
+  } catch(e) {
+    // Fallback with static data
+    const fallback = FAMILIES.map((f,i) => ({ family: f, count: Math.floor(Math.random()*60)+5 }))
+    const total = fallback.reduce((s,c) => s + c.count, 0)
+    el.innerHTML = fallback.map((c,i) => {
+      const bg = PALETTE[i % PALETTE.length]
+      const pct = ((c.count/total)*100).toFixed(1)
+      return `<div class="treemap-cell" style="background:${bg}22;border:1px solid ${bg}44">
+        <div class="treemap-name" style="color:${bg}">${c.family}</div>
+        <div class="treemap-count" style="color:${bg}">${c.count}</div>
+        <div class="treemap-pct">${pct}% of demand</div>
+      </div>`
+    }).join('')
+  }
+}
+
+async function loadMomentumTable() {
+  const el = document.getElementById('momentumTableWrap')
+  try {
+    const cParam = selectedCountry ? `&country=${encodeURIComponent(selectedCountry)}` : ''
+    const data = await apiFetch(`/skills/trends?window=30&limit=10&order_by=posting_count${cParam}`)
+    const skills = data.data || []
+    if (!skills.length) { el.innerHTML = '<div style="color:var(--text3);text-align:center;padding:20px">No data</div>'; return }
+    el.innerHTML = `<table class="data-table"><thead><tr><th>#</th><th>Skill</th><th>Share</th><th>MoM</th><th>Trend</th></tr></thead><tbody>
+      ${skills.map((s,i) => `<tr>
+        <td class="rank-num">${i+1}</td>
+        <td style="color:var(--text);font-weight:500">${s.skill_name}</td>
+        <td>${((s.posting_share||0)*100).toFixed(1)}%</td>
+        <td>${momBadge(s.mom_change)}</td>
+        <td class="sparkline-cell">${sparkline(s.posting_count, s.posting_count * (1 - (s.mom_change||0)))}</td>
+      </tr>`).join('')}
+    </tbody></table>`
+  } catch(e) { el.innerHTML = '<div style="color:var(--text3);text-align:center;padding:20px;font-size:12px">Could not load momentum data</div>' }
+}
+
+async function loadAutoInsight() {
+  const el = document.getElementById('autoInsightBody')
+  try {
+    const scope = selectedCountry ? ` in the ${selectedCountry} market` : ' across all markets'
+    let url = `/insights?q=${encodeURIComponent('What are the top 3 trends' + scope + ' right now? Include specific skill names, companies, and numbers.')}&window=30`
+    if (selectedCountry) url += `&country=${encodeURIComponent(selectedCountry)}`
+    const data = await apiFetch(url)
+    const analysis = data.data?.analysis || data.analysis || 'No analysis available.'
+    const model = data.data?.model || data.model || 'LLM'
+    const sources = data.data?.sources || data.sources || []
+    el.innerHTML = `<div class="insight-text">${renderMarkdown(analysis)}</div>
+      <div class="insight-meta">
+        <span class="model-badge">${model}</span>
+        ${sources.length ? `<span style="color:var(--text3)">${sources.length} sources referenced</span>` : ''}
+      </div>`
+  } catch(e) {
+    el.innerHTML = `<div class="insight-text" style="color:var(--text3)">AI analysis unavailable — check that the API is reachable and GROQ_API_KEY is set.</div>`
+  }
+}
+
+LOADED.overview = true
+initOverview()
+
+// ══════════════════════════════════════════════
+//  PAGE: SKILL TRENDS
+// ══════════════════════════════════════════════
+async function initSkills(force) {
+  // NOTE: do NOT guard on LOADED.skills here — the navigation handler already sets it before calling us.
+  // The guard was causing Skill Trends to silently skip loading on first visit.
+  LOADED.skills = true
+  const window = document.getElementById('skillWindowSel')?.value || 30
+  const family = document.getElementById('skillFamilySel')?.value || ''
+  let params = `window=${window}&limit=25&order_by=posting_count`
+  if (family)          params += `&title_family=${encodeURIComponent(family)}`
+  if (selectedCountry) params += `&country=${encodeURIComponent(selectedCountry)}`
+
+  // Show loading states
+  destroyChart('skillDemand'); destroyChart('skillCategory')
+  document.getElementById('momentumTableFull').innerHTML = '<div class="skeleton" style="height:240px"></div>'
+  document.getElementById('heatmapWrap').innerHTML = '<div class="skeleton" style="height:200px"></div>'
+  document.getElementById('risingMoversWrap').innerHTML = '<div class="skeleton" style="height:160px"></div>'
+  document.getElementById('decliningMoversWrap').innerHTML = '<div class="skeleton" style="height:160px"></div>'
+
+  try {
+    const [data] = await Promise.all([
+      apiFetch(`/skills/trends?${params}`),
+      loadSkillMovers(),
+    ])
+    const skills = data.data || []
+    renderSkillDemandChart(skills)
+    renderSkillCategoryChart(skills)
+    renderMomentumFull(skills)
+    renderHeatmap(skills)
+  } catch(e) {
+    console.error('Skills error', e)
+  }
+}
+
+async function loadSkillMovers() {
+  try {
+    const cParam = selectedCountry ? `?country=${encodeURIComponent(selectedCountry)}` : ''
+    const d = await apiFetch(`/skills/movers${cParam}`)
+    const rising   = d.data?.rising   || []
+    const declining = d.data?.declining || []
+
+    const noDataMsg = '<div style="color:var(--text3);font-size:12px;padding:16px;text-align:center">Momentum data builds after multiple ingestion runs</div>'
+
+    const risingEl = document.getElementById('risingMoversWrap')
+    risingEl.innerHTML = rising.length ? rising.map(s => {
+      const pct = s.momentum ? ((s.momentum - 1) * 100).toFixed(0) : 0
+      return `<div class="mover-row">
+        <span class="mover-name">${s.skill_name}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:var(--text3)">${s.cnt_7d} jobs/7d</span>
+          <span class="mover-badge mover-up">+${pct}%</span>
+        </div>
+      </div>`
+    }).join('') : noDataMsg
+
+    const declEl = document.getElementById('decliningMoversWrap')
+    declEl.innerHTML = declining.length ? declining.map(s => {
+      const pct = s.momentum ? ((1 - s.momentum) * 100).toFixed(0) : 0
+      return `<div class="mover-row">
+        <span class="mover-name">${s.skill_name}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:var(--text3)">${s.cnt_7d} jobs/7d</span>
+          <span class="mover-badge mover-down">-${pct}%</span>
+        </div>
+      </div>`
+    }).join('') : noDataMsg
+  } catch(e) {
+    const msg = '<div style="color:var(--text3);font-size:12px;padding:10px">Unavailable</div>'
+    document.getElementById('risingMoversWrap').innerHTML = msg
+    document.getElementById('decliningMoversWrap').innerHTML = msg
+  }
+}
+
+function renderSkillDemandChart(skills) {
+  destroyChart('skillDemand')
+  const top15 = skills.slice(0,15)
+  const ctx = document.getElementById('chartSkillDemand')?.getContext('2d')
+  if (!ctx) return
+  charts.skillDemand = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: top15.map(s => s.skill_name),
+      datasets: [{
+        data: top15.map(s => s.posting_count),
+        backgroundColor: top15.map(s => catColor(s.skill_category) + 'bb'),
+        borderColor: top15.map(s => catColor(s.skill_category)),
+        borderWidth: 1, borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: gc() }, ticks: { color: tc() } },
+        y: { grid: { display: false }, ticks: { color: ytc(), font: { size: 11 } } }
+      }
+    }
+  })
+}
+
+function renderSkillCategoryChart(skills) {
+  destroyChart('skillCategory')
+  const bycat = {}
+  skills.forEach(s => {
+    const cat = s.skill_category || 'Other'
+    bycat[cat] = (bycat[cat]||0) + s.posting_count
+  })
+  const entries = Object.entries(bycat).sort((a,b) => b[1]-a[1]).slice(0,10)
+  const ctx = document.getElementById('chartSkillCategory')?.getContext('2d')
+  if (!ctx) return
+  charts.skillCategory = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: entries.map(e => e[0]),
+      datasets: [{
+        label: 'Postings',
+        data: entries.map(e => e[1]),
+        backgroundColor: entries.map((e,i) => PALETTE[i%PALETTE.length]+'bb'),
+        borderColor: entries.map((e,i) => PALETTE[i%PALETTE.length]),
+        borderWidth: 1, borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: gc() }, ticks: { color: tc() } },
+        y: { grid: { display: false }, ticks: { color: ytc(), font: { size: 11 } } }
+      }
+    }
+  })
+}
+
+function renderMomentumFull(skills) {
+  const el = document.getElementById('momentumTableFull')
+  if (!el) return
+  if (!skills.length) { el.innerHTML = '<div style="color:var(--text3);padding:20px;text-align:center">No data</div>'; return }
+  el.innerHTML = `<div style="overflow-x:auto"><table class="data-table" style="min-width:600px">
+    <thead><tr><th style="width:36px">#</th><th>Skill</th><th>Category</th><th>Postings</th><th>Share %</th><th>MoM Δ</th><th>YoY Δ</th><th>Trend</th></tr></thead>
+    <tbody>${skills.map((s,i) => `<tr>
+      <td class="rank-num">${s.rank||i+1}</td>
+      <td style="color:var(--text);font-weight:600">${s.skill_name}</td>
+      <td><span class="pill" style="background:${catColor(s.skill_category)}22;color:${catColor(s.skill_category)};border:1px solid ${catColor(s.skill_category)}44">${s.skill_category||'—'}</span></td>
+      <td style="color:var(--accent);font-weight:600">${s.posting_count}</td>
+      <td>${((s.posting_share||0)*100).toFixed(2)}%</td>
+      <td>${momBadge(s.mom_change)}</td>
+      <td>${momBadge(s.yoy_change)}</td>
+      <td class="sparkline-cell">${sparkline(s.posting_count, s.posting_count*(1-(s.mom_change||0)))}</td>
+    </tr>`).join('')}</tbody></table></div>`
+}
+
+async function renderHeatmap(allSkills) {
+  const el = document.getElementById('heatmapWrap')
+  if (!el) return
+  const topSkills = allSkills.slice(0,10).map(s => s.skill_name)
+  const topFamilies = FAMILIES.slice(0,6)
+
+  el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:10px">Loading heatmap…</div>'
+
+  try {
+    // Fetch skill data per family
+    const familyData = {}
+    const hCParam = selectedCountry ? `&country=${encodeURIComponent(selectedCountry)}` : ''
+    await Promise.allSettled(topFamilies.map(async f => {
+      const d = await apiFetch(`/skills/trends?window=30&title_family=${encodeURIComponent(f)}&limit=25${hCParam}`)
+      familyData[f] = {}
+      ;(d.data||[]).forEach(s => { familyData[f][s.skill_name] = s.posting_share || 0 })
+    }))
+
+    const cols = 1 + topFamilies.length
+    el.innerHTML = `<div class="heatmap-grid" style="grid-template-columns: 130px repeat(${topFamilies.length},1fr)">
+      <div class="heatmap-header">Skill</div>
+      ${topFamilies.map(f => `<div class="heatmap-header">${f.replace(' Engineering','<br>Eng').replace('Management','Mgmt')}</div>`).join('')}
+      ${topSkills.map(skill => {
+        const shares = topFamilies.map(f => familyData[f]?.[skill] || 0)
+        const maxShare = Math.max(...shares, 0.01)
+        return `<div class="heatmap-label">${skill}</div>` +
+          shares.map(share => {
+            const intensity = Math.min(share / maxShare, 1)
+            const alpha = (0.1 + intensity * 0.85).toFixed(2)
+            const textColor = intensity > 0.5 ? '#fff' : intensity > 0.2 ? '#e2e8f0' : '#4a5568'
+            const pct = share > 0 ? (share*100).toFixed(1)+'%' : '—'
+            return `<div class="heatmap-cell" style="background:rgba(79,142,247,${alpha});color:${textColor}">${pct}</div>`
+          }).join('')
+      }).join('')}
+    </div>`
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--text3);padding:20px;text-align:center;font-size:12px">Could not load heatmap data</div>'
+  }
+}
+
+// ══════════════════════════════════════════════
+//  PAGE: JOB EXPLORER
+// ══════════════════════════════════════════════
+const JOBS_PER_PAGE = 20
+
+async function initJobs() {
+  jobsPage = { page: 1, totalPages: 1, loading: false, filters: {} }
+  // Always sync local country dropdown to the current global filter.
+  // This ensures that when the global country changes, the local dropdown reflects it.
+  const sel = document.getElementById('jobCountry')
+  if (sel) sel.value = selectedCountry
+  searchJobs()
+}
+
+async function searchJobs() {
+  const q        = document.getElementById('jobSearch').value.trim()
+  const family   = document.getElementById('jobFamily').value
+  const modality = document.getElementById('jobModality').value
+  const seniority= document.getElementById('jobSeniority').value
+  const country  = document.getElementById('jobCountry').value
+  const sort     = document.getElementById('jobSort')?.value || 'newest'
+  jobsPage.filters = { q, family, modality, seniority, country, sort }
+  jobsPage.page = 1
+  document.getElementById('jobList').innerHTML = '<div class="skeleton" style="height:80px"></div><div class="skeleton" style="height:80px;margin-top:10px"></div><div class="skeleton" style="height:80px;margin-top:10px"></div>'
+  renderActiveFilterChips()
+  await fetchJobs()
+}
+
+function renderActiveFilterChips() {
+  const { q, family, modality, seniority, country, sort } = jobsPage.filters
+  const chips = []
+  if (q)        chips.push({ label: `"${q}"`,   clear: () => { document.getElementById('jobSearch').value = ''; searchJobs() } })
+  if (family)   chips.push({ label: family,      clear: () => { document.getElementById('jobFamily').value = ''; searchJobs() } })
+  if (modality) chips.push({ label: modality,    clear: () => { document.getElementById('jobModality').value = ''; searchJobs() } })
+  if (seniority)chips.push({ label: seniority,   clear: () => { document.getElementById('jobSeniority').value = ''; searchJobs() } })
+  if (country)  chips.push({ label: `📍 ${country}`, clear: () => { document.getElementById('jobCountry').value = ''; searchJobs() } })
+  if (sort && sort !== 'newest') chips.push({ label: `Sort: ${sort.replace('_',' ')}`, clear: () => { document.getElementById('jobSort').value = 'newest'; searchJobs() } })
+
+  const el = document.getElementById('activeFilterChips')
+  if (!el) return
+  if (!chips.length) { el.innerHTML = ''; return }
+  el.innerHTML = chips.map((c, i) =>
+    `<span class="filter-chip" onclick="_clearChip(${i})"><span>${c.label}</span><span class="filter-chip-x">✕</span></span>`
+  ).join('')
+  // Attach closures via data attribute workaround
+  el.querySelectorAll('.filter-chip').forEach((chip, i) => {
+    chip.addEventListener('click', chips[i].clear)
+  })
+  // Re-render after assignment so onclick works
+  el.innerHTML = chips.map((c, i) =>
+    `<span class="filter-chip" data-idx="${i}"><span>${c.label}</span><span class="filter-chip-x">✕</span></span>`
+  ).join('')
+  el.querySelectorAll('.filter-chip').forEach((chip, i) => {
+    chip.addEventListener('click', chips[i].clear)
+  })
+}
+
+async function fetchJobs() {
+  if (jobsPage.loading) return
+  jobsPage.loading = true
+  const { q, family, modality, seniority, sort } = jobsPage.filters
+  // localCountry from dropdown = 2-letter code from Job Explorer filter
+  // globalCountry fallback = selectedCountry from sidebar
+  const localCountry = jobsPage.filters.country || ''
+  const effectiveCountry = localCountry || selectedCountry
+  const offset = (jobsPage.page - 1) * JOBS_PER_PAGE
+  let url = `/jobs?page_size=${JOBS_PER_PAGE}&offset=${offset}`
+  if (q)              url += `&q=${encodeURIComponent(q)}`
+  if (family)         url += `&title_family=${encodeURIComponent(family)}`
+  if (modality)       url += `&modality=${encodeURIComponent(modality)}`
+  if (seniority)      url += `&seniority=${encodeURIComponent(seniority)}`
+  // Sort: map frontend sort values to API params
+  if (sort === 'oldest')      url += `&sort=oldest`
+  if (sort === 'salary_high') url += `&salary_min=1&sort=salary_desc`
+  if (sort === 'salary_low')  url += `&salary_min=1&sort=salary_asc`
+  // Use `country=` (exact 2-letter code) instead of `location=` to avoid ILIKE '%IN%' matching "Berlin", "Finland" etc.
+  if (effectiveCountry) url += `&country=${encodeURIComponent(effectiveCountry)}`
+
+  try {
+    const data  = await apiFetch(url)
+    const jobs  = data.data || []
+    const meta  = data.meta || {}
+    const total = meta.total_count || 0
+    jobsPage.totalPages = Math.max(1, Math.ceil(total / JOBS_PER_PAGE))
+    jobsPage.loading = false
+
+    document.getElementById('jobsCount').innerHTML =
+      `Showing <strong>${(jobsPage.page-1)*JOBS_PER_PAGE + 1}–${Math.min(jobsPage.page*JOBS_PER_PAGE, total)}</strong> of <strong>${total}</strong> postings`
+
+    const listEl = document.getElementById('jobList')
+    if (!jobs.length) {
+      listEl.innerHTML = `<div class="empty-state"><span class="emoji">🔍</span><p>No jobs found matching your criteria.<br/>Try adjusting your filters.</p></div>`
+    } else {
+      listEl.innerHTML = jobs.map(j => renderJobCard(j)).join('')
+    }
+    renderPagination()
+  } catch(e) {
+    jobsPage.loading = false
+    document.getElementById('jobList').innerHTML = `<div class="empty-state"><span class="emoji">⚠️</span><p>Could not load jobs.<br/>Check that the API is running.</p></div>`
+  }
+}
+
+function renderPagination() {
+  const bar = document.getElementById('paginationBar')
+  const { page, totalPages } = jobsPage
+  if (totalPages <= 1) { bar.innerHTML = ''; return }
+
+  const btn = (label, pg, disabled, active) =>
+    `<button class="btn btn-ghost btn-xs" style="${active?'background:var(--accent);color:#fff;':''}${disabled?'opacity:0.35;cursor:default;':''}"
+      onclick="${disabled?'':'goToPage('+pg+')'}">${label}</button>`
+
+  let pages = []
+  pages.push(btn('←', page - 1, page === 1, false))
+
+  // Show first, ellipsis, window around current, ellipsis, last
+  const range = new Set([1, totalPages, page-1, page, page+1].filter(p => p>=1 && p<=totalPages))
+  let prev = 0
+  Array.from(range).sort((a,b)=>a-b).forEach(p => {
+    if (prev && p - prev > 1) pages.push(`<span style="color:var(--text3);padding:0 4px">…</span>`)
+    pages.push(btn(p, p, false, p === page))
+    prev = p
+  })
+
+  pages.push(btn('→', page + 1, page === totalPages, false))
+  bar.innerHTML = pages.join('')
+}
+
+async function goToPage(pg) {
+  jobsPage.page = pg
+  document.getElementById('jobList').innerHTML = '<div class="skeleton" style="height:80px"></div><div class="skeleton" style="height:80px;margin-top:10px"></div><div class="skeleton" style="height:80px;margin-top:10px"></div>'
+  window.scrollTo(0, document.getElementById('page-jobs').offsetTop)
+  await fetchJobs()
+}
+
+function renderJobCard(j) {
+  const title    = j.title_raw || j.title_normalized || 'Unknown Title'
+  const company  = j.company?.company_name || j.company?.name || 'Unknown Company'
+  const modality = j.location?.modality || ''
+  const country  = j.location?.country || ''
+  const seniority= j.seniority_level || ''
+  const family   = j.title_family && j.title_family !== 'Other' ? j.title_family : ''
+  const skills   = (j.skills || []).slice(0, 4)
+  const url      = j.source_url || ''
+  const salary   = j.salary?.min ? `$${(j.salary.min/1000).toFixed(0)}k${j.salary.max ? '–'+Math.round(j.salary.max/1000)+'k' : '+'}` : ''
+
+  return `<div class="job-card">
+    <div class="job-card-left">
+      <div class="job-title">${title}</div>
+      <div class="job-company">🏢 ${company}${country ? ` &nbsp;·&nbsp; <span style="font-size:11px;color:var(--text3)">${country}</span>` : ''}</div>
+      <div class="job-tags">
+        ${family   ? `<span class="pill pill-blue">${family}</span>` : ''}
+        ${modality ? `<span class="pill ${pillColor(modality)}">${modality}</span>` : ''}
+        ${seniority? `<span class="pill ${pillColor(seniority)}">${seniority}</span>` : ''}
+        ${salary   ? `<span class="pill" style="background:rgba(16,185,129,0.15);color:#10b981">💰 ${salary}</span>` : ''}
+        ${skills.map(s => `<span class="pill pill-gray">${s}</span>`).join('')}
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">
+      <div class="job-date">${fmtDate(j.posted_at)}</div>
+      ${url ? `<a href="${url}" target="_blank" class="btn btn-ghost btn-xs" style="text-decoration:none">View →</a>` : ''}
+    </div>
+  </div>`
+}
+
+// ══════════════════════════════════════════════
+//  PAGE: COMPANIES
+// ══════════════════════════════════════════════
+async function initCompanies() {
+  const el = document.getElementById('companyGrid')
+  el.innerHTML = '<div class="skeleton" style="height:160px;grid-column:span 3"></div>'
+  try {
+    const countryParam = selectedCountry ? `&country=${encodeURIComponent(selectedCountry)}` : ''
+    const data = await apiFetch(`/companies?page_size=100${countryParam}`)
+    allCompanies = data.data || []
+
+    // Populate industry filter
+    const industries = [...new Set(allCompanies.map(c => c.industry).filter(Boolean))].sort()
+    const indSel = document.getElementById('companyIndustry')
+    if (indSel) {
+      indSel.innerHTML = '<option value="">All Industries</option>' +
+        industries.map(i => `<option value="${i}">${i}</option>`).join('')
+    }
+
+    applyCompanyFilters()
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="grid-column:span 3"><span class="emoji">⚠️</span><p>Could not load companies.</p></div>`
+  }
+}
+
+function applyCompanyFilters() {
+  const q        = (document.getElementById('companySearch')?.value || '').toLowerCase()
+  const industry = document.getElementById('companyIndustry')?.value || ''
+  const sort     = document.getElementById('companySort')?.value || 'active'
+
+  let filtered = allCompanies.filter(c => {
+    if (q && !(c.company_name||'').toLowerCase().includes(q)) return false
+    if (industry && c.industry !== industry) return false
+    return true
+  })
+
+  if (sort === 'active')    filtered.sort((a,b) => (b.active_jobs||0) - (a.active_jobs||0))
+  else if (sort === 'velocity') filtered.sort((a,b) => (b.hiring_velocity_score||0) - (a.hiring_velocity_score||0))
+  else if (sort === 'alpha')    filtered.sort((a,b) => (a.company_name||'').localeCompare(b.company_name||''))
+
+  const countEl = document.getElementById('companiesCount')
+  if (countEl) countEl.innerHTML = `Showing <strong>${filtered.length}</strong> companies`
+
+  renderCompanyGrid(filtered)
+}
+
+function filterCompanies(q) { applyCompanyFilters() }
+
+function renderCompanyGrid(companies) {
+  const el = document.getElementById('companyGrid')
+  if (!companies.length) {
+    el.innerHTML = `<div class="empty-state" style="grid-column:span 3"><span class="emoji">🏢</span><p>No companies found.</p></div>`
+    return
+  }
+  el.innerHTML = companies.map(c => {
+    const name     = c.company_name || 'Unknown Company'
+    const jobs     = c.active_jobs  || 0
+    const industry = c.industry     || ''
+    const country  = c.hq_country   || ''
+    const stage    = c.company_stage|| ''
+    const skills   = (c.top_skills  || []).slice(0, 3)
+    const roles    = (c.top_roles   || []).slice(0, 2)
+    const meta     = [industry, stage, country].filter(Boolean).join(' · ')
+    // Velocity colour
+    const vel = c.hiring_velocity_score || 0
+    const velColor = vel > 60 ? '#10b981' : vel > 30 ? '#f59e0b' : 'var(--text3)'
+
+    return `<div class="company-card" onclick="openDrawer('${c.company_id}')">
+      <div class="company-name">${name}</div>
+      <div class="company-meta" style="min-height:16px">${meta || '<span style="color:var(--text3);font-size:11px">Independent company</span>'}</div>
+      <div class="company-jobs-num">${jobs}</div>
+      <div class="company-jobs-label">Active Jobs</div>
+      ${roles.length ? `<div style="margin:8px 0 4px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Top Roles</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">
+          ${roles.map(r => `<span class="pill pill-purple" style="font-size:10px">${r}</span>`).join('')}
+        </div>` : ''}
+      <div class="company-skills">${skills.map(s => `<span class="pill pill-blue">${s}</span>`).join('') || '<span style="color:var(--text3);font-size:11px">No skills data yet</span>'}</div>
+      ${vel > 0 ? `<div style="margin-top:10px;font-size:10px;color:${velColor};font-weight:600">⚡ Velocity ${Math.round(vel)}</div>` : ''}
+    </div>`
+  }).join('')
+}
+
+function filterCompanies(q) {
+  const filtered = allCompanies.filter(c => !q || (c.company_name||'').toLowerCase().includes(q.toLowerCase()))
+  renderCompanyGrid(filtered)
+}
+
+async function openDrawer(id) {
+  document.getElementById('drawerOverlay').classList.add('open')
+  document.getElementById('companyDrawer').classList.add('open')
+  const company = allCompanies.find(c => c.company_id === id) || {}
+  document.getElementById('drawerName').textContent = company.company_name || 'Company'
+  document.getElementById('drawerMeta').textContent = [company.industry, company.company_stage, company.hq_country].filter(Boolean).join(' · ') || 'No metadata available'
+  const body = document.getElementById('drawerBody')
+  body.innerHTML = '<div class="skeleton" style="height:300px"></div>'
+
+  try {
+    const signals = await apiFetch(`/companies/${id}/signals?window=90`)
+    const s = signals.data || {}
+    const velocity  = s.hiring_velocity_score || 0
+    const topSkills = s.top_skills || company.top_skills || []
+    const topRoles  = s.top_roles  || company.top_roles  || []
+    const total     = s.total_postings  || company.active_jobs || 0
+    const active    = s.active_postings || company.active_jobs || 0
+
+    body.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:26px;font-weight:700;color:var(--accent)">${active}</div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-top:4px">Active Jobs</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:26px;font-weight:700;color:${velocity>50?'#10b981':velocity>25?'#f59e0b':'var(--text)'}">${Math.round(velocity)}</div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-top:4px">Velocity Score</div>
+        </div>
+      </div>
+
+      ${topSkills.length ? `
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Top Skills Hiring For</div>
+        ${topSkills.slice(0,6).map((sk, i) => {
+          const w = Math.max(20, 100 - i * 13)
+          const name = typeof sk === 'string' ? sk : sk.skill_name || sk.name || String(sk)
+          return `<div class="velocity-row"><span class="velocity-label">${name}</span><div class="velocity-bar-wrap"><div class="velocity-bar-fill" style="width:${w}%"></div></div></div>`
+        }).join('')}
+      </div>` : ''}
+
+      ${topRoles.length ? `
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Role Families</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${topRoles.slice(0, 6).map(r => `<span class="pill pill-purple">${typeof r==='string'?r:r.role||String(r)}</span>`).join('')}
+        </div>
+      </div>` : ''}
+
+      ${s.salary_benchmarks ? `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Salary Range</div>
+        <div style="font-size:16px;font-weight:600;color:var(--green)">
+          $${Math.round(s.salary_benchmarks.median_min/1000)}k – $${Math.round(s.salary_benchmarks.median_max/1000)}k
+        </div>
+      </div>` : ''}
+    `
+  } catch(e) {
+    body.innerHTML = `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;margin-bottom:16px">
+        <div style="font-size:28px;font-weight:700;color:var(--accent)">${company.active_jobs||0}</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-top:4px">Active Jobs</div>
+      </div>
+      ${(company.top_skills||[]).length ? `
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Top Skills</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${(company.top_skills||[]).slice(0,6).map(s=>`<span class="pill pill-blue">${s}</span>`).join('')}
+        </div>` : '<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">No detailed data available yet</div>'}
+    `
+  }
+}
+
+function closeDrawer() {
+  document.getElementById('drawerOverlay').classList.remove('open')
+  document.getElementById('companyDrawer').classList.remove('open')
+}
+
+// ══════════════════════════════════════════════
+//  Global Country Filter
+// ══════════════════════════════════════════════
+function onCountryChange(val) {
+  selectedCountry = val
+  _statsCache = null
+  // Invalidate all page caches so they reload with new country context
+  delete LOADED.overview; delete LOADED.skills; delete LOADED.jobs; delete LOADED.companies; delete LOADED.ai
+  // Re-init current active page
+  const activePage = document.querySelector('.nav-item.active')?.dataset.page
+  if (!activePage) return
+  const inits = {
+    overview: initOverview,
+    skills: () => initSkills(true),
+    jobs: initJobs,
+    companies: initCompanies,
+    ai: initAI,
+  }
+  if (inits[activePage]) {
+    LOADED[activePage] = true
+    inits[activePage]()
+  }
+}
+
+// ══════════════════════════════════════════════
+//  PAGE: AI INSIGHTS
+// ══════════════════════════════════════════════
+async function initAI() {
+  // Update hero subtitle to reflect current country scope
+  const heroSub = document.getElementById('aiHeroSub')
+  if (heroSub) {
+    const scopeLabel = selectedCountry ? `the ${selectedCountry} market` : 'all markets globally'
+    heroSub.textContent = `Ask AI to surface trends, patterns, and opportunities. Currently scoped to ${scopeLabel}.`
+  }
+  // Reset skeleton state before reload
+  document.getElementById('autoCard1').innerHTML = '<div class="skeleton" style="height:120px"></div>'
+  document.getElementById('autoCard2').innerHTML = '<div class="skeleton" style="height:120px"></div>'
+  document.getElementById('autoCard3').innerHTML = '<div class="skeleton" style="height:120px"></div>'
+  loadAutoCards()
+  // Nudge user to re-run their query with the new country context
+  const activeQuery = document.getElementById('aiQuery')?.value?.trim()
+  if (activeQuery) {
+    const box = document.getElementById('aiResultBox')
+    const meta = document.getElementById('aiResultMeta')
+    if (box && box.innerHTML && !box.innerHTML.includes('skeleton')) {
+      meta.style.display = 'none'
+      box.innerHTML = `<div style="color:var(--text3);font-size:12px;padding:8px 0">Country changed — press <strong style="color:var(--accent)">Analyze</strong> to refresh results for ${selectedCountry || 'global'} market.</div>`
+    }
+  }
+}
+
+function setAiChip(el) {
+  const q = el.textContent.trim()
+  document.getElementById('aiQuery').value = q  // Set first, runAiQuery reads it
+  runAiQuery()  // runAiQuery will inject country context from selectedCountry
+}
+
+async function runAiQuery() {
+  const q = document.getElementById('aiQuery').value.trim()
+  if (!q) return
+  const window = document.getElementById('aiWindow').value
+  const family = document.getElementById('aiFamily').value
+  const box = document.getElementById('aiResultBox')
+  const meta = document.getElementById('aiResultMeta')
+  box.innerHTML = `<div class="skeleton" style="height:14px;width:90%"></div><div class="skeleton" style="height:14px;width:75%;margin-top:8px"></div><div class="skeleton" style="height:14px;width:82%;margin-top:8px"></div><div class="skeleton" style="height:14px;width:60%;margin-top:8px"></div>`
+  meta.style.display = 'none'
+
+  // Pass question as-is — the backend injects country context into the system prompt.
+  // Pass country= so the backend knows the current scope hint.
+  let url = `/insights?q=${encodeURIComponent(q)}&window=${window}`
+  if (family)           url += `&title_family=${encodeURIComponent(family)}`
+  if (selectedCountry)  url += `&country=${encodeURIComponent(selectedCountry)}`
+
+  try {
+    const data = await apiFetch(url)
+    const analysis = data.data?.analysis || data.analysis || 'No analysis returned.'
+    const model = data.data?.model || data.model || ''
+    const sources = data.data?.sources || data.sources || []
+    box.innerHTML = `<div class="ai-result-text">${renderMarkdown(analysis)}</div>`
+    if (model || sources.length) {
+      meta.style.display = 'flex'
+      meta.innerHTML = `<div class="insight-meta"><span class="model-badge">${model||'LLM'}</span>${sources.length?`<span style="color:var(--text3)">${sources.length} sources</span>`:''}</div>`
+    }
+  } catch(e) {
+    box.innerHTML = `<div style="color:var(--red);font-size:13px;padding:10px">Failed to get analysis. Make sure the API is running.</div>`
+  }
+}
+
+async function loadAutoCards() {
+  // Card 1: Top skills
+  try {
+    const cParam = selectedCountry ? `&country=${encodeURIComponent(selectedCountry)}` : ''
+    const d = await apiFetch(`/skills/trends?window=30&limit=5&order_by=posting_count${cParam}`)
+    const skills = d.data || []
+    document.getElementById('autoCard1').innerHTML = skills.map((s,i) =>
+      `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:12px;color:var(--text)">${i+1}. ${s.skill_name}</span>
+        <span style="font-size:11px;color:var(--accent);font-weight:600">${s.posting_count} jobs</span>
+      </div>`
+    ).join('')
+  } catch(e) { document.getElementById('autoCard1').innerHTML = '<div style="color:var(--text3);font-size:12px">Unavailable</div>' }
+
+  // Card 2: Hiring leaders (fix: use company_name not name)
+  try {
+    const countryParam = selectedCountry ? `&country=${encodeURIComponent(selectedCountry)}` : ''
+    const d = await apiFetch(`/companies?page_size=10${countryParam}`)
+    const companies = (d.data||[]).filter(c => (c.active_jobs||0) > 0)
+      .sort((a,b) => (b.active_jobs||0) - (a.active_jobs||0)).slice(0,5)
+    document.getElementById('autoCard2').innerHTML = companies.length
+      ? companies.map((c,i) =>
+        `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;color:var(--text)">${i+1}. ${c.company_name || 'Unknown'}</span>
+          <span style="font-size:11px;color:var(--green);font-weight:600">${c.active_jobs||0} jobs</span>
+        </div>`
+      ).join('')
+      : '<div style="color:var(--text3);font-size:12px">No data</div>'
+  } catch(e) { document.getElementById('autoCard2').innerHTML = '<div style="color:var(--text3);font-size:12px">Unavailable</div>' }
+
+  // Card 3: Market summary (with country context)
+  try {
+    const scope = selectedCountry ? ` in the ${selectedCountry} market` : ' globally'
+    let card3Url = `/insights?q=${encodeURIComponent('Give a concise 3-4 sentence summary of the current tech job market' + scope + '. Include top role family and modality trend.')}&window=30`
+    if (selectedCountry) card3Url += `&country=${encodeURIComponent(selectedCountry)}`
+    const d = await apiFetch(card3Url)
+    const analysis = d.data?.analysis || d.analysis || ''
+    document.getElementById('autoCard3').innerHTML = analysis
+      ? `<div style="font-size:12px;color:var(--text2);line-height:1.6">${renderMarkdown(analysis)}</div>`
+      : '<div style="color:var(--text3);font-size:12px;padding:4px 0">Market summary unavailable — rate limit or API error. Try again shortly.</div>'
+  } catch(e) { document.getElementById('autoCard3').innerHTML = '<div style="color:var(--text3);font-size:12px;padding:4px 0">Market summary unavailable — rate limit or API error. Try again shortly.</div>' }
+}
+
+// ══════════════════════════════════════════════
+//  PAGE: API EXPLORER
+// ══════════════════════════════════════════════
+async function tryEndpoint(type, btn) {
+  const codeEl = document.getElementById('resp-' + type)
+  const isOpen = codeEl.classList.contains('open')
+  if (isOpen) { codeEl.classList.remove('open'); btn.textContent = '▶ Try it'; return }
+
+  btn.textContent = '⏳ Loading…'
+  const endpoints = {
+    jobs: '/jobs?page_size=3',
+    skills: '/skills/trends?window=30&limit=5',
+    companies: '/companies?page_size=3',
+    insights: '/insights?q=top+skills+in+demand&window=30'
+  }
+
+  try {
+    const data = await apiFetch(endpoints[type])
+    codeEl.innerHTML = syntaxHighlightJSON(JSON.stringify(data, null, 2))
+    codeEl.classList.add('open')
+    btn.textContent = '▼ Hide'
+  } catch(e) {
+    codeEl.textContent = `Error: ${e.message}\n\nMake sure the API is running at http://localhost:8000`
+    codeEl.classList.add('open')
+    btn.textContent = '▼ Hide'
+  }
+}
+
+// ══════════════════════════════════════════════
+//  Theme Toggle (Dark / Light)
+// ══════════════════════════════════════════════
+let _isDark = true
+function tc()  { return _isDark ? '#94a3b8' : '#374151' }  // tick / label color
+function gc()  { return _isDark ? '#1e2d45' : '#dce6f1' }  // grid line color
+function ytc() { return _isDark ? '#e2e8f0' : '#374151' }  // y-axis label (was near-white)
+
+function applyTheme(dark) {
+  _isDark = dark
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+  const track = document.getElementById('themeTrack')
+  const label = document.getElementById('themeLabel')
+  if (track) track.classList.toggle('on', !dark)
+  if (label) label.textContent = dark ? '☀️ Light Mode' : '🌙 Dark Mode'
+  // Update Chart.js defaults to match theme
+  const textColor    = dark ? '#94a3b8' : '#374151'
+  const borderColor  = dark ? '#1e2d45' : '#dce6f1'
+  Chart.defaults.color = textColor
+  Chart.defaults.borderColor = borderColor
+  // Re-draw all active charts with new colors
+  Object.values(charts).forEach(chart => {
+    if (!chart) return
+    if (chart.options.scales?.x) {
+      chart.options.scales.x.grid.color = borderColor
+      chart.options.scales.x.ticks.color = textColor
+    }
+    if (chart.options.scales?.y) {
+      chart.options.scales.y.grid.color = borderColor
+      chart.options.scales.y.ticks.color = textColor
+    }
+    if (chart.options.plugins?.legend?.labels) {
+      chart.options.plugins.legend.labels.color = textColor
+    }
+    chart.update()
+  })
+  try { localStorage.setItem('js_theme', dark ? 'dark' : 'light') } catch(e) {}
+}
+
+function toggleTheme() {
+  applyTheme(!_isDark)
+}
+
+// Restore saved theme
+;(function() {
+  try {
+    const saved = localStorage.getItem('js_theme')
+    if (saved === 'light') applyTheme(false)
+  } catch(e) {}
+})()
+
+// ══════════════════════════════════════════════
+//  Keyboard / Enter support
+// ══════════════════════════════════════════════
+document.getElementById('jobSearch').addEventListener('keydown', e => { if (e.key==='Enter') searchJobs() })
+document.getElementById('aiQuery').addEventListener('keydown', e => { if (e.key==='Enter') runAiQuery() })
+document.getElementById('companySearch').addEventListener('keydown', e => { if (e.key==='Enter') filterCompanies(e.target.value) })
+</script>
+</body>
+</html>
