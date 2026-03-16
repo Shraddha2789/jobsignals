@@ -2,7 +2,7 @@
 PYTHON := .venv/bin/python
 PIP    := .venv/bin/pip
 
-.PHONY: help setup db-up db-down db-reset seed ingest api scheduler dashboard classify test lint cron-install cron-uninstall cron-classify cron-classify-uninstall launchd-install launchd-uninstall automate
+.PHONY: help setup db-up db-down db-reset seed ingest api scheduler dashboard classify test lint cron-install cron-uninstall cron-classify cron-classify-uninstall launchd-install launchd-uninstall automate git-setup push status
 
 help:
 	@echo ""
@@ -19,7 +19,12 @@ help:
 	@echo "  make test       Run pytest"
 	@echo "  make dashboard  Serve the analytics dashboard (port 3000)"
 	@echo "  make classify   Run LLM title classifier on unclassified postings"
-	@echo "  make lint              Run ruff linter"
+	@echo "  make lint       Run ruff linter"
+	@echo ""
+	@echo "  ── Git / Deploy ──────────────────────────────"
+	@echo "  make git-setup            Install pre-commit hooks (run once)"
+	@echo "  make push MSG='message'   Stage all → commit → push to GitHub"
+	@echo "  make status               Show git status + recent commits"
 	@echo ""
 	@echo "  ── Automation ───────────────────────────────"
 	@echo "  make automate          Install ALL automation in one command"
@@ -100,6 +105,38 @@ launchd-install:
 
 launchd-uninstall:
 	@bash scripts/install_launchd.sh uninstall
+
+# ── Git workflow ──────────────────────────────────────────────────────────────
+
+git-setup:
+	@echo "→ Installing pre-commit hooks..."
+	$(PIP) install -q pre-commit
+	$(PYTHON) -m pre_commit install
+	@echo "✓ Pre-commit hooks installed."
+	@echo "  Hooks run automatically before every commit."
+	@echo "  To run manually: pre-commit run --all-files"
+
+# Usage: make push MSG="your commit message"
+push:
+	@[ "$(MSG)" ] || (echo "❌  Usage: make push MSG='your commit message'" && exit 1)
+	@echo "→ Staging all changes..."
+	git add -A
+	@echo "→ Committing: $(MSG)"
+	git commit -m "$(MSG)"
+	@echo "→ Pushing to GitHub (main)..."
+	git push
+	@echo ""
+	@echo "✓ Pushed. GitHub Actions will now:"
+	@echo "  1. Run lint + tests"
+	@echo "  2. Deploy to Railway if tests pass"
+	@echo "  Track progress: https://github.com/Shraddha2789/jobsignals/actions"
+
+status:
+	@git status --short
+	@echo ""
+	@git log --oneline -5
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 # One-shot: install everything — daily ingest + weekly classify + API as service
 automate: cron-install cron-classify launchd-install
