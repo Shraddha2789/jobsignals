@@ -364,6 +364,32 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 /* ── Sort + filter bar ── */
 .sort-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px}
 .sort-label{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;flex-shrink:0}
+
+/* ── Salary Benchmark page ── */
+.salary-hero{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 32px;margin-bottom:20px}
+.salary-hero-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px}
+.salary-hero-sub{font-size:12px;color:var(--text3);margin-bottom:28px}
+.percentile-row{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.percentile-label{font-size:11px;font-weight:700;color:var(--text3);width:34px;text-align:right;flex-shrink:0}
+.percentile-bar-wrap{flex:1;background:var(--surface2);border-radius:6px;height:26px;overflow:hidden}
+.percentile-bar{height:100%;border-radius:6px;transition:width 0.7s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;padding-left:12px;min-width:60px}
+.percentile-bar-val{font-size:12px;font-weight:700;color:#fff;white-space:nowrap}
+.percentile-median .percentile-bar{background:linear-gradient(90deg,#4f8ef7,#818cf8)}
+.percentile-row:not(.percentile-median) .percentile-bar{background:linear-gradient(90deg,rgba(79,142,247,0.45),rgba(79,142,247,0.65))}
+.salary-table{width:100%;border-collapse:collapse;margin-top:24px}
+.salary-table th{font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:var(--text3);padding:8px 14px;text-align:left;border-bottom:1px solid var(--border);font-weight:600}
+.salary-table td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2)}
+.salary-table tr:last-child td{border-bottom:none}
+.salary-table .median-row td{color:var(--text);font-weight:700;background:var(--accent-glow)}
+.salary-empty{text-align:center;padding:60px 20px;color:var(--text3)}
+.salary-empty-icon{font-size:40px;margin-bottom:12px}
+/* ── Skills pills input ── */
+.skills-pill-wrap{display:flex;flex-wrap:wrap;gap:5px;align-items:center;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:5px 10px;min-width:180px;cursor:text}
+.skills-pill-wrap:focus-within{border-color:var(--accent)}
+.skill-pill{display:inline-flex;align-items:center;gap:4px;background:var(--accent-glow);border:1px solid rgba(79,142,247,0.3);color:var(--accent);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px}
+.skill-pill-x{cursor:pointer;opacity:0.7;font-size:13px;line-height:1}
+.skill-pill-x:hover{opacity:1}
+.skills-pill-input{border:none;background:transparent;color:var(--text);font-family:inherit;font-size:12px;outline:none;min-width:80px;flex:1}
 </style>
 </head>
 <body>
@@ -407,6 +433,9 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
   </div>
   <div class="nav-item" data-page="companies">
     <span class="nav-icon">🏢</span> Companies
+  </div>
+  <div class="nav-item" data-page="salaries">
+    <span class="nav-icon">💰</span> Salary Benchmark
   </div>
   <div class="nav-item" data-page="ai">
     <span class="nav-icon">✨</span> AI Insights
@@ -615,6 +644,21 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
       </select>
       <button class="btn btn-primary btn-sm" onclick="searchJobs()">Search</button>
     </div>
+    <!-- Row 2: Salary range + Skills pills -->
+    <div class="filter-bar" style="padding-top:0;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px">Salary</span>
+        <input type="number" class="form-input" id="jobSalaryMin" placeholder="Min $k" style="width:90px;font-size:12px" onkeydown="if(event.key==='Enter')searchJobs()" />
+        <span style="color:var(--text3);font-size:12px">–</span>
+        <input type="number" class="form-input" id="jobSalaryMax" placeholder="Max $k" style="width:90px;font-size:12px" onkeydown="if(event.key==='Enter')searchJobs()" />
+      </div>
+      <div class="skills-pill-wrap" id="skillsPillWrap" onclick="document.getElementById('skillsInput').focus()">
+        <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;flex-shrink:0">Skills</span>
+        <div id="skillPills"></div>
+        <input type="text" class="skills-pill-input" id="skillsInput" placeholder="Add skill + Enter…" onkeydown="handleSkillInput(event)" />
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="clearAllFilters()">Clear All</button>
+    </div>
     <!-- Active filter chips -->
     <div class="filter-chips" id="activeFilterChips"></div>
     <!-- Sort bar -->
@@ -666,6 +710,70 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
     <button class="drawer-close" onclick="closeDrawer()">✕</button>
   </div>
   <div id="drawerBody"><div class="skeleton" style="height:300px"></div></div>
+</div>
+
+<!-- ───── PAGE: SALARY BENCHMARK ───── -->
+<div class="page" id="page-salaries">
+  <div class="topbar">
+    <div class="topbar-title">Salary Benchmark</div>
+  </div>
+  <div style="padding:24px 28px">
+
+    <!-- Filters -->
+    <div class="filter-bar" style="margin-bottom:24px">
+      <select class="form-select" id="salRole" style="width:200px">
+        <option value="">Select Role…</option>
+        <option value="Data Engineering">Data Engineering</option>
+        <option value="Data Science">Data Science</option>
+        <option value="ML Engineering">ML Engineering</option>
+        <option value="Software Engineering">Software Engineering</option>
+        <option value="Product Management">Product Management</option>
+      </select>
+      <select class="form-select" id="salSeniority" style="width:150px">
+        <option value="">Any Level</option>
+        <option value="intern">Intern</option>
+        <option value="junior">Junior</option>
+        <option value="mid">Mid</option>
+        <option value="senior">Senior</option>
+        <option value="staff">Staff</option>
+        <option value="principal">Principal</option>
+        <option value="executive">Executive</option>
+      </select>
+      <select class="form-select" id="salCountry" style="width:160px">
+        <option value="US">🇺🇸 United States</option>
+        <option value="GB">🇬🇧 United Kingdom</option>
+        <option value="IN">🇮🇳 India</option>
+        <option value="DE">🇩🇪 Germany</option>
+        <option value="CA">🇨🇦 Canada</option>
+        <option value="AU">🇦🇺 Australia</option>
+        <option value="SG">🇸🇬 Singapore</option>
+      </select>
+      <select class="form-select" id="salStage" style="width:150px">
+        <option value="">All Stages</option>
+        <option value="startup">Startup</option>
+        <option value="growth">Growth</option>
+        <option value="enterprise">Enterprise</option>
+        <option value="public">Public</option>
+      </select>
+      <select class="form-select" id="salWindow" style="width:130px">
+        <option value="90">Last 90 days</option>
+        <option value="30">Last 30 days</option>
+        <option value="365">Last 12 months</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="loadSalaryBenchmark()">Calculate</button>
+    </div>
+
+    <!-- Results area -->
+    <div id="salaryResults">
+      <!-- Default empty state -->
+      <div class="salary-empty">
+        <div class="salary-empty-icon">💰</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px">Select a role to see salary ranges</div>
+        <div style="font-size:13px">Choose a role family, level, and country above — then click Calculate</div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <!-- ───── PAGE: AI INSIGHTS ───── -->
@@ -1095,7 +1203,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
     document.getElementById('page-' + pg).classList.add('active')
     if (!LOADED[pg]) {
       LOADED[pg] = true
-      const inits = { overview: initOverview, skills: initSkills, jobs: initJobs, companies: initCompanies, ai: initAI, datasets: () => {}, apiexplorer: () => {} }
+      const inits = { overview: initOverview, skills: initSkills, jobs: initJobs, companies: initCompanies, salaries: initSalaries, ai: initAI, datasets: () => {}, apiexplorer: () => {} }
       if (inits[pg]) inits[pg]()
     }
   })
@@ -1622,27 +1730,49 @@ async function initJobs() {
 }
 
 async function searchJobs() {
-  const q        = document.getElementById('jobSearch').value.trim()
-  const family   = document.getElementById('jobFamily').value
-  const modality = document.getElementById('jobModality').value
-  const seniority= document.getElementById('jobSeniority').value
-  const country  = document.getElementById('jobCountry').value
-  const sort     = document.getElementById('jobSort')?.value || 'newest'
-  jobsPage.filters = { q, family, modality, seniority, country, sort }
+  const q          = document.getElementById('jobSearch').value.trim()
+  const family     = document.getElementById('jobFamily').value
+  const modality   = document.getElementById('jobModality').value
+  const seniority  = document.getElementById('jobSeniority').value
+  const country    = document.getElementById('jobCountry').value
+  const sort       = document.getElementById('jobSort')?.value || 'newest'
+  const salaryMinK = parseInt(document.getElementById('jobSalaryMin')?.value || 0)
+  const salaryMaxK = parseInt(document.getElementById('jobSalaryMax')?.value || 0)
+  const salaryMin  = salaryMinK > 0 ? salaryMinK * 1000 : null
+  const salaryMax  = salaryMaxK > 0 ? salaryMaxK * 1000 : null
+  const skills     = [...skillPillsState]
+  jobsPage.filters = { q, family, modality, seniority, country, sort, salaryMin, salaryMax, skills }
   jobsPage.page = 1
   document.getElementById('jobList').innerHTML = '<div class="skeleton" style="height:80px"></div><div class="skeleton" style="height:80px;margin-top:10px"></div><div class="skeleton" style="height:80px;margin-top:10px"></div>'
   renderActiveFilterChips()
   await fetchJobs()
 }
 
+function clearAllFilters() {
+  document.getElementById('jobSearch').value = ''
+  document.getElementById('jobFamily').value = ''
+  document.getElementById('jobModality').value = ''
+  document.getElementById('jobSeniority').value = ''
+  document.getElementById('jobCountry').value = ''
+  document.getElementById('jobSort').value = 'newest'
+  document.getElementById('jobSalaryMin').value = ''
+  document.getElementById('jobSalaryMax').value = ''
+  skillPillsState = []
+  renderSkillPills()
+  searchJobs()
+}
+
 function renderActiveFilterChips() {
-  const { q, family, modality, seniority, country, sort } = jobsPage.filters
+  const { q, family, modality, seniority, country, sort, salaryMin, salaryMax, skills } = jobsPage.filters
   const chips = []
-  if (q)        chips.push({ label: `"${q}"`,   clear: () => { document.getElementById('jobSearch').value = ''; searchJobs() } })
-  if (family)   chips.push({ label: family,      clear: () => { document.getElementById('jobFamily').value = ''; searchJobs() } })
-  if (modality) chips.push({ label: modality,    clear: () => { document.getElementById('jobModality').value = ''; searchJobs() } })
-  if (seniority)chips.push({ label: seniority,   clear: () => { document.getElementById('jobSeniority').value = ''; searchJobs() } })
-  if (country)  chips.push({ label: `📍 ${country}`, clear: () => { document.getElementById('jobCountry').value = ''; searchJobs() } })
+  if (q)         chips.push({ label: `"${q}"`,            clear: () => { document.getElementById('jobSearch').value = ''; searchJobs() } })
+  if (family)    chips.push({ label: family,               clear: () => { document.getElementById('jobFamily').value = ''; searchJobs() } })
+  if (modality)  chips.push({ label: modality,             clear: () => { document.getElementById('jobModality').value = ''; searchJobs() } })
+  if (seniority) chips.push({ label: seniority,            clear: () => { document.getElementById('jobSeniority').value = ''; searchJobs() } })
+  if (country)   chips.push({ label: `📍 ${country}`,     clear: () => { document.getElementById('jobCountry').value = ''; searchJobs() } })
+  if (salaryMin) chips.push({ label: `Min $${salaryMin/1000}k`, clear: () => { document.getElementById('jobSalaryMin').value = ''; searchJobs() } })
+  if (salaryMax) chips.push({ label: `Max $${salaryMax/1000}k`, clear: () => { document.getElementById('jobSalaryMax').value = ''; searchJobs() } })
+  if (skills && skills.length) skills.forEach(s => chips.push({ label: `🔧 ${s}`, clear: () => { skillPillsState = skillPillsState.filter(x => x !== s); renderSkillPills(); searchJobs() } }))
   if (sort && sort !== 'newest') chips.push({ label: `Sort: ${sort.replace('_',' ')}`, clear: () => { document.getElementById('jobSort').value = 'newest'; searchJobs() } })
 
   const el = document.getElementById('activeFilterChips')
@@ -1667,9 +1797,7 @@ function renderActiveFilterChips() {
 async function fetchJobs() {
   if (jobsPage.loading) return
   jobsPage.loading = true
-  const { q, family, modality, seniority, sort } = jobsPage.filters
-  // localCountry from dropdown = 2-letter code from Job Explorer filter
-  // globalCountry fallback = selectedCountry from sidebar
+  const { q, family, modality, seniority, sort, salaryMin, salaryMax, skills } = jobsPage.filters
   const localCountry = jobsPage.filters.country || ''
   const effectiveCountry = localCountry || selectedCountry
   const offset = (jobsPage.page - 1) * JOBS_PER_PAGE
@@ -1678,11 +1806,11 @@ async function fetchJobs() {
   if (family)         url += `&title_family=${encodeURIComponent(family)}`
   if (modality)       url += `&modality=${encodeURIComponent(modality)}`
   if (seniority)      url += `&seniority=${encodeURIComponent(seniority)}`
-  // Sort: map frontend sort values to API params
   if (sort === 'oldest')      url += `&sort=oldest`
   if (sort === 'salary_high') url += `&salary_min=1&sort=salary_desc`
   if (sort === 'salary_low')  url += `&salary_min=1&sort=salary_asc`
-  // Use `country=` (exact 2-letter code) instead of `location=` to avoid ILIKE '%IN%' matching "Berlin", "Finland" etc.
+  if (salaryMin)      url += `&salary_min=${salaryMin}`
+  if (skills && skills.length) url += `&skills=${encodeURIComponent(skills.join(','))}`
   if (effectiveCountry) url += `&country=${encodeURIComponent(effectiveCountry)}`
 
   try {
@@ -1950,6 +2078,7 @@ function onCountryChange(val) {
     skills: () => initSkills(true),
     jobs: initJobs,
     companies: initCompanies,
+    salaries: initSalaries,
     ai: initAI,
   }
   if (inits[activePage]) {
@@ -2150,6 +2279,166 @@ function toggleTheme() {
 document.getElementById('jobSearch').addEventListener('keydown', e => { if (e.key==='Enter') searchJobs() })
 document.getElementById('aiQuery').addEventListener('keydown', e => { if (e.key==='Enter') runAiQuery() })
 document.getElementById('companySearch').addEventListener('keydown', e => { if (e.key==='Enter') filterCompanies(e.target.value) })
+
+// ══════════════════════════════════════════════
+//  Skills pills (Job Explorer)
+// ══════════════════════════════════════════════
+let skillPillsState = []
+
+function renderSkillPills() {
+  const container = document.getElementById('skillPills')
+  if (!container) return
+  container.innerHTML = skillPillsState.map(s =>
+    `<span class="skill-pill">${s}<span class="skill-pill-x" onclick="removeSkillPill('${s}')">✕</span></span>`
+  ).join('')
+}
+
+function removeSkillPill(skill) {
+  skillPillsState = skillPillsState.filter(s => s !== skill)
+  renderSkillPills()
+  searchJobs()
+}
+
+function handleSkillInput(e) {
+  const input = e.target
+  if ((e.key === 'Enter' || e.key === ',') && input.value.trim()) {
+    e.preventDefault()
+    const skill = input.value.trim().replace(/,$/, '')
+    if (skill && !skillPillsState.includes(skill)) {
+      skillPillsState.push(skill)
+      renderSkillPills()
+    }
+    input.value = ''
+    searchJobs()
+  } else if (e.key === 'Backspace' && !input.value && skillPillsState.length) {
+    skillPillsState.pop()
+    renderSkillPills()
+    searchJobs()
+  }
+}
+
+// ══════════════════════════════════════════════
+//  Salary Benchmark page
+// ══════════════════════════════════════════════
+function initSalaries() {
+  // Pre-select sensible defaults
+  const roleEl = document.getElementById('salRole')
+  if (roleEl && !roleEl.value) roleEl.value = 'Software Engineering'
+  const senEl = document.getElementById('salSeniority')
+  if (senEl && !senEl.value) senEl.value = 'senior'
+}
+
+async function loadSalaryBenchmark() {
+  const role     = document.getElementById('salRole').value
+  const seniority= document.getElementById('salSeniority').value
+  const country  = document.getElementById('salCountry').value
+  const stage    = document.getElementById('salStage').value
+  const window_days = document.getElementById('salWindow').value
+
+  if (!role) {
+    document.getElementById('salaryResults').innerHTML =
+      `<div class="salary-empty"><div class="salary-empty-icon">⚠️</div><div style="font-size:14px;font-weight:600;color:var(--text)">Please select a role family</div></div>`
+    return
+  }
+  if (!seniority) {
+    document.getElementById('salaryResults').innerHTML =
+      `<div class="salary-empty"><div class="salary-empty-icon">⚠️</div><div style="font-size:14px;font-weight:600;color:var(--text)">Please select a seniority level</div></div>`
+    return
+  }
+
+  document.getElementById('salaryResults').innerHTML =
+    `<div class="salary-hero"><div class="skeleton" style="height:200px"></div></div>`
+
+  let url = `${API}/salaries/benchmark?title_family=${encodeURIComponent(role)}&seniority=${encodeURIComponent(seniority)}&country=${country}&window_days=${window_days}`
+  if (stage) url += `&company_stage=${stage}`
+
+  try {
+    const resp = await fetch(url)
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}))
+      const msg = err.detail || `No salary data found for ${role} / ${seniority} in ${country}`
+      document.getElementById('salaryResults').innerHTML =
+        `<div class="salary-empty"><div class="salary-empty-icon">📭</div>
+         <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px">Not enough data</div>
+         <div style="font-size:13px">${msg}</div>
+         <div style="font-size:12px;color:var(--text3);margin-top:8px">Try a different role, level, or country — or increase the time window.</div></div>`
+      return
+    }
+    const json = await resp.json()
+    const d = json.data
+    renderSalaryBenchmark(d, role, seniority, country, window_days)
+  } catch(e) {
+    document.getElementById('salaryResults').innerHTML =
+      `<div class="salary-empty"><div class="salary-empty-icon">⚠️</div><div style="font-size:14px;color:var(--text)">Failed to load salary data</div></div>`
+  }
+}
+
+function renderSalaryBenchmark(d, role, seniority, country, window_days) {
+  const currency = country === 'IN' ? '₹' : '$'
+  const divisor  = country === 'IN' ? 100000 : 1000
+  const suffix   = country === 'IN' ? 'L' : 'k'
+
+  function fmt(val) {
+    if (!val) return '—'
+    return `${currency}${(val / divisor).toFixed(1)}${suffix}`
+  }
+
+  const max = d.percentile_90 || 1
+  const rows = [
+    { pct: 'P10', val: d.percentile_10, isMedian: false },
+    { pct: 'P25', val: d.percentile_25, isMedian: false },
+    { pct: 'P50', val: d.percentile_50, isMedian: true  },
+    { pct: 'P75', val: d.percentile_75, isMedian: false },
+    { pct: 'P90', val: d.percentile_90, isMedian: false },
+  ]
+
+  const windowLabel = { '30': '30 days', '90': '90 days', '365': '12 months' }[window_days] || `${window_days} days`
+  const countryNames = { US:'United States', GB:'United Kingdom', IN:'India', DE:'Germany', CA:'Canada', AU:'Australia', SG:'Singapore' }
+  const countryName = countryNames[country] || country
+
+  const barsHtml = rows.map(r => {
+    const pct = r.val ? Math.round((r.val / max) * 100) : 0
+    return `
+      <div class="percentile-row ${r.isMedian ? 'percentile-median' : ''}">
+        <span class="percentile-label">${r.pct}</span>
+        <div class="percentile-bar-wrap">
+          <div class="percentile-bar" style="width:${pct}%">
+            <span class="percentile-bar-val">${fmt(r.val)}</span>
+          </div>
+        </div>
+        ${r.isMedian ? `<span style="font-size:10px;font-weight:700;color:var(--accent);background:var(--accent-glow);padding:2px 7px;border-radius:4px;flex-shrink:0">MEDIAN</span>` : '<span style="width:60px;flex-shrink:0"></span>'}
+      </div>`
+  }).join('')
+
+  const tableHtml = `
+    <table class="salary-table">
+      <thead><tr><th>Percentile</th><th>Annual Salary</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>10th (P10)</td><td>${fmt(d.percentile_10)}</td><td style="color:var(--text3)">Bottom 10% — entry floor</td></tr>
+        <tr><td>25th (P25)</td><td>${fmt(d.percentile_25)}</td><td style="color:var(--text3)">Below average</td></tr>
+        <tr class="median-row"><td>50th (P50) — Median</td><td>${fmt(d.percentile_50)}</td><td>Market midpoint</td></tr>
+        <tr><td>75th (P75)</td><td>${fmt(d.percentile_75)}</td><td style="color:var(--text3)">Above average</td></tr>
+        <tr><td>90th (P90)</td><td>${fmt(d.percentile_90)}</td><td style="color:var(--text3)">Top 10% — high end</td></tr>
+      </tbody>
+    </table>`
+
+  document.getElementById('salaryResults').innerHTML = `
+    <div class="salary-hero">
+      <div class="salary-hero-title">Salary Distribution — ${seniority.charAt(0).toUpperCase()+seniority.slice(1)} ${role} · ${countryName}</div>
+      <div class="salary-hero-sub">Based on ${d.sample_size.toLocaleString()} postings · last ${windowLabel} · currency: ${d.currency || (country==='IN'?'INR':'USD')}</div>
+      ${barsHtml}
+      ${tableHtml}
+      <div style="margin-top:16px;font-size:11px;color:var(--text3)">
+        Data sources: posted salaries + inferred ranges · Minimum 10 postings required for display
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('salSeniority').value='junior';loadSalaryBenchmark()">Compare: Junior</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('salSeniority').value='mid';loadSalaryBenchmark()">Compare: Mid</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('salSeniority').value='senior';loadSalaryBenchmark()">Compare: Senior</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('salSeniority').value='staff';loadSalaryBenchmark()">Compare: Staff</button>
+    </div>`
+}
 </script>
 </body>
 </html>
