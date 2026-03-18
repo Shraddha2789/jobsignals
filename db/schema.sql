@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS job_postings (
     job_id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     source_id           VARCHAR(255) NOT NULL,
     source_platform     VARCHAR(50)  NOT NULL
-        CHECK (source_platform IN ('linkedin','indeed','remoteok','remotive','arbeitnow','adzuna','yc_jobs','career_page','seed','other')),
+        CHECK (source_platform IN ('linkedin','indeed','remoteok','remotive','arbeitnow','adzuna','jooble','yc_jobs','career_page','seed','other')),
     source_url          TEXT,
 
     -- Title
