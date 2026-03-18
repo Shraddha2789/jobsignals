@@ -2,16 +2,29 @@
 Pydantic models for raw ingested job data.
 These are the shapes that all source adapters must produce.
 """
+
 from __future__ import annotations
 
 from datetime import datetime
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, field_validator
 
 
-SourcePlatform = Literal["linkedin", "indeed", "remoteok", "remotive", "arbeitnow", "adzuna", "yc_jobs", "career_page", "seed", "other"]
-WorkModality   = Literal["remote", "hybrid", "onsite", "unspecified"]
+SourcePlatform = Literal[
+    "linkedin",
+    "indeed",
+    "remoteok",
+    "remotive",
+    "arbeitnow",
+    "adzuna",
+    "jooble",
+    "yc_jobs",
+    "career_page",
+    "seed",
+    "other",
+]
+WorkModality = Literal["remote", "hybrid", "onsite", "unspecified"]
 EmploymentType = Literal["full_time", "part_time", "contract", "internship"]
 SeniorityLevel = Literal["intern", "junior", "mid", "senior", "staff", "principal", "executive"]
 
