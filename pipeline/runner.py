@@ -4,11 +4,10 @@ Ingestion + normalization runner.
 Orchestrates: fetch → deduplicate → normalize → persist → aggregate.
 One run processes all registered adapters sequentially.
 """
+
 from __future__ import annotations
 
-import json
 import os
-from datetime import datetime, timezone
 
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -19,9 +18,12 @@ from ingestion.adapters.adzuna import AdzunaAdapter
 from ingestion.adapters.jooble import JoobleAdapter
 from ingestion.adapters.arbeitnow import ArbeitnowAdapter
 from ingestion.adapters.base import BaseAdapter
+from ingestion.adapters.himalayas import HimalayasAdapter
+from ingestion.adapters.jobicy import JobicyAdapter
 from ingestion.adapters.remoteok import RemoteOKAdapter
 from ingestion.adapters.remotive import RemotiveAdapter
-from ingestion.adapters.seed import COMPANIES, ROLE_FAMILIES, SeedAdapter
+from ingestion.adapters.serpapi import SerpAPIAdapter
+from ingestion.adapters.seed import COMPANIES, SeedAdapter
 from ingestion.models import RawJobPosting
 from pipeline.aggregations import run_all_aggregations
 from pipeline.deduplication import compute_content_hash, hash_exists, is_duplicate
@@ -33,6 +35,7 @@ DATASET_VERSION = os.environ.get("DATASET_VERSION", "1.0.0")
 
 
 # ── Company bootstrap ──────────────────────────────────────────────────────────
+
 
 def _ensure_companies() -> dict[str, str]:
     """
@@ -62,12 +65,12 @@ def _ensure_companies() -> dict[str, str]:
                         """
                     ),
                     {
-                        "name":      c["name"],
-                        "domain":    c["domain"],
-                        "industry":  c["industry"],
-                        "stage":     c["stage"],
+                        "name": c["name"],
+                        "domain": c["domain"],
+                        "industry": c["industry"],
+                        "stage": c["stage"],
                         "employees": c["employees"],
-                        "country":   c["country"],
+                        "country": c["country"],
                     },
                 ).fetchone()
                 mapping[c["domain"]] = str(row[0])
@@ -75,6 +78,7 @@ def _ensure_companies() -> dict[str, str]:
 
 
 # ── Single posting persistence ─────────────────────────────────────────────────
+
 
 def _persist_posting(
     raw: RawJobPosting,
@@ -86,9 +90,6 @@ def _persist_posting(
     content_hash: str,
 ) -> str | None:
     """Insert one job posting and return its job_id, or None if skipped."""
-
-    city = raw.location_city or ""
-    posted_date = str(raw.posted_at.date()) if raw.posted_at else str(datetime.now(tz=timezone.utc).date())
 
     if hash_exists(content_hash):
         return None
@@ -121,28 +122,28 @@ def _persist_posting(
                 """
             ),
             {
-                "src_id":     raw.source_id,
-                "platform":   raw.source_platform,
-                "url":        raw.source_url,
-                "title_raw":  raw.title_raw,
+                "src_id": raw.source_id,
+                "platform": raw.source_platform,
+                "url": raw.source_url,
+                "title_raw": raw.title_raw,
                 "title_norm": title_normalized,
-                "family":     title_family,
+                "family": title_family,
                 "company_id": company_id,
-                "loc_raw":    raw.location_raw,
-                "city":       raw.location_city,
-                "country":    raw.location_country,
-                "modality":   raw.work_modality,
-                "emp_type":   raw.employment_type,
-                "seniority":  seniority_level,
-                "desc_raw":   raw.description_raw,
+                "loc_raw": raw.location_raw,
+                "city": raw.location_city,
+                "country": raw.location_country,
+                "modality": raw.work_modality,
+                "emp_type": raw.employment_type,
+                "seniority": seniority_level,
+                "desc_raw": raw.description_raw,
                 "desc_clean": description_cleaned,
-                "sal_min":    raw.salary_min,
-                "sal_max":    raw.salary_max,
-                "sal_cur":    raw.salary_currency,
-                "sal_src":    raw.salary_source,
-                "posted_at":  raw.posted_at,
-                "hash":       content_hash,
-                "version":    DATASET_VERSION,
+                "sal_min": raw.salary_min,
+                "sal_max": raw.salary_max,
+                "sal_cur": raw.salary_currency,
+                "sal_src": raw.salary_source,
+                "posted_at": raw.posted_at,
+                "hash": content_hash,
+                "version": DATASET_VERSION,
             },
         ).fetchone()
 
@@ -170,18 +171,19 @@ def _persist_skills(job_id: str, raw_desc: str) -> int:
                 ),
                 {
                     "job_id": job_id,
-                    "name":   skill.skill_name,
-                    "cat":    skill.skill_category,
-                    "raw":    skill.skill_raw,
-                    "req":    skill.is_required,
+                    "name": skill.skill_name,
+                    "cat": skill.skill_category,
+                    "raw": skill.skill_raw,
+                    "req": skill.is_required,
                     "method": skill.extraction_method,
-                    "conf":   skill.confidence_score,
+                    "conf": skill.confidence_score,
                 },
             )
     return len(skills)
 
 
 # ── Auto-insert unknown companies ─────────────────────────────────────────────
+
 
 def _upsert_company_by_name(company_name: str, company_map: dict[str, str]) -> str | None:
     """
@@ -217,6 +219,7 @@ def _upsert_company_by_name(company_name: str, company_map: dict[str, str]) -> s
 
 # ── Shared adapter loop ────────────────────────────────────────────────────────
 
+
 def _run_adapter(
     adapter: BaseAdapter,
     company_map: dict[str, str],
@@ -239,14 +242,18 @@ def _run_adapter(
                 progress.advance(task)
                 continue
 
-            company_id = company_map.get(raw.company_domain or "") or _upsert_company_by_name(raw.company_name, company_map)
+            company_id = company_map.get(raw.company_domain or "") or _upsert_company_by_name(
+                raw.company_name, company_map
+            )
             city = raw.location_city or ""
             posted_date = str(raw.posted_at.date()) if raw.posted_at else "2026-01-01"
 
             title_norm, family, seniority = normalize_title(raw.title_raw)
             seniority = raw.seniority_level or seniority
 
-            content_hash = compute_content_hash(company_id or "unknown", title_norm, city, posted_date)
+            content_hash = compute_content_hash(
+                company_id or "unknown", title_norm, city, posted_date
+            )
             desc_cleaned = " ".join(raw.description_raw.split())
 
             job_id = _persist_posting(
@@ -265,6 +272,7 @@ def _run_adapter(
 
 # ── Main runners ───────────────────────────────────────────────────────────────
 
+
 def run_ingestion(n_seed_postings: int = 400) -> dict[str, int]:
     """Run seed data ingestion (development / demo)."""
     console.print("[bold cyan]▶ JobSignals ingestion pipeline starting...[/]")
@@ -274,7 +282,12 @@ def run_ingestion(n_seed_postings: int = 400) -> dict[str, int]:
     console.print(f"  [green]✓[/] {len(company_map)} companies ready")
 
     stats = {"processed": 0, "inserted": 0, "skipped": 0, "skills": 0}
-    _run_adapter(SeedAdapter(n_postings=n_seed_postings), company_map, stats, f"{n_seed_postings} seed postings")
+    _run_adapter(
+        SeedAdapter(n_postings=n_seed_postings),
+        company_map,
+        stats,
+        f"{n_seed_postings} seed postings",
+    )
 
     console.print(
         f"  [green]✓[/] Ingestion complete: "
@@ -296,16 +309,22 @@ def run_all_sources() -> dict[str, int]:
     total_stats = {"processed": 0, "inserted": 0, "skipped": 0, "skills": 0}
 
     sources = [
-        (RemoteOKAdapter(),              "RemoteOK"),
-        (RemotiveAdapter(),              "Remotive"),
-        (ArbeitnowAdapter(),             "Arbeitnow"),
-        (AdzunaAdapter(country="us"),    "Adzuna US"),
-        (AdzunaAdapter(country="gb"),    "Adzuna GB"),
-        (AdzunaAdapter(country="in"),    "Adzuna IN"),
-        (AdzunaAdapter(country="au"),    "Adzuna AU"),
-        (AdzunaAdapter(country="de"),    "Adzuna DE"),
-        (AdzunaAdapter(country="ca"),    "Adzuna CA"),
-        (JoobleAdapter(),                "Jooble"),
+        # ── Free, unlimited — runs every 3 hours ──────────────────────────────
+        (RemoteOKAdapter(), "RemoteOK"),
+        (RemotiveAdapter(), "Remotive"),
+        (ArbeitnowAdapter(), "Arbeitnow"),
+        (HimalayasAdapter(), "Himalayas"),
+        (JobicyAdapter(), "Jobicy"),
+        # ── API key required ──────────────────────────────────────────────────
+        (AdzunaAdapter(country="us"), "Adzuna US"),
+        (AdzunaAdapter(country="gb"), "Adzuna GB"),
+        (AdzunaAdapter(country="in"), "Adzuna IN"),
+        (AdzunaAdapter(country="au"), "Adzuna AU"),
+        (AdzunaAdapter(country="de"), "Adzuna DE"),
+        (AdzunaAdapter(country="ca"), "Adzuna CA"),
+        (JoobleAdapter(), "Jooble"),
+        # ── Google Jobs via SerpAPI — rotates daily (100 free/month) ─────────
+        (SerpAPIAdapter(), "Google Jobs (SerpAPI)"),
     ]
 
     for adapter, name in sources:
