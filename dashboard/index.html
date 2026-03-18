@@ -740,6 +740,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
         <option value="executive">Executive</option>
       </select>
       <select class="form-select" id="salCountry" style="width:160px">
+        <option value="" selected>🌍 Global</option>
         <option value="US">🇺🇸 United States</option>
         <option value="GB">🇬🇧 United Kingdom</option>
         <option value="IN">🇮🇳 India</option>
@@ -747,6 +748,9 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
         <option value="CA">🇨🇦 Canada</option>
         <option value="AU">🇦🇺 Australia</option>
         <option value="SG">🇸🇬 Singapore</option>
+        <option value="NL">🇳🇱 Netherlands</option>
+        <option value="FR">🇫🇷 France</option>
+        <option value="BR">🇧🇷 Brazil</option>
       </select>
       <select class="form-select" id="salStage" style="width:150px">
         <option value="">All Stages</option>
@@ -2321,11 +2325,13 @@ function handleSkillInput(e) {
 //  Salary Benchmark page
 // ══════════════════════════════════════════════
 function initSalaries() {
-  // Pre-select sensible defaults
+  // Pre-select sensible defaults and auto-load
   const roleEl = document.getElementById('salRole')
   if (roleEl && !roleEl.value) roleEl.value = 'Software Engineering'
   const senEl = document.getElementById('salSeniority')
   if (senEl && !senEl.value) senEl.value = 'senior'
+  // Auto-load global benchmark on first visit
+  loadSalaryBenchmark()
 }
 
 async function loadSalaryBenchmark() {
@@ -2349,7 +2355,8 @@ async function loadSalaryBenchmark() {
   document.getElementById('salaryResults').innerHTML =
     `<div class="salary-hero"><div class="skeleton" style="height:200px"></div></div>`
 
-  let url = `${API}/salaries/benchmark?title_family=${encodeURIComponent(role)}&seniority=${encodeURIComponent(seniority)}&country=${country}&window_days=${window_days}`
+  let url = `${API}/salaries/benchmark?title_family=${encodeURIComponent(role)}&seniority=${encodeURIComponent(seniority)}&window_days=${window_days}`
+  if (country) url += `&country=${country}`   // empty = global, no country filter
   if (stage) url += `&company_stage=${stage}`
 
   try {
@@ -2393,8 +2400,8 @@ function renderSalaryBenchmark(d, role, seniority, country, window_days) {
   ]
 
   const windowLabel = { '30': '30 days', '90': '90 days', '365': '12 months' }[window_days] || `${window_days} days`
-  const countryNames = { US:'United States', GB:'United Kingdom', IN:'India', DE:'Germany', CA:'Canada', AU:'Australia', SG:'Singapore' }
-  const countryName = countryNames[country] || country
+  const countryNames = { '':'Global', GLOBAL:'Global', US:'United States', GB:'United Kingdom', IN:'India', DE:'Germany', CA:'Canada', AU:'Australia', SG:'Singapore', NL:'Netherlands', FR:'France', BR:'Brazil' }
+  const countryName = countryNames[country] || countryNames[d.country] || d.country || 'Global'
 
   const barsHtml = rows.map(r => {
     const pct = r.val ? Math.round((r.val / max) * 100) : 0

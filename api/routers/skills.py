@@ -1,7 +1,8 @@
 """GET /v1/skills — skill trends and demand signals."""
+
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
@@ -19,12 +20,12 @@ VALID_WINDOWS = {7: "7d", 30: "30d", 90: "90d", 365: "365d"}
 
 @router.get("/trends", response_model=APIResponse[list[SkillTrendOut]])
 def skill_trends(
-    title_family:    Optional[str] = Query(None),
-    country:         Optional[str] = Query(None),
-    window:          int           = Query(30, enum=[7, 30, 90, 365]),
-    limit:           int           = Query(25, ge=1, le=100),
-    order_by:        str           = Query("posting_share", enum=["posting_count", "posting_share", "mom_change"]),
-    db:              Connection    = Depends(get_db),
+    title_family: Optional[str] = Query(None),
+    country: Optional[str] = Query(None),
+    window: int = Query(30, enum=[7, 30, 90, 365]),
+    limit: int = Query(25, ge=1, le=100),
+    order_by: str = Query("posting_share", enum=["posting_count", "posting_share", "mom_change"]),
+    db: Connection = Depends(get_db),
 ):
     params: dict = {"window": window, "limit": limit}
     conditions = ["window_days = :window"]
@@ -39,9 +40,7 @@ def skill_trends(
 
     # Get the most recent period available
     latest_period = db.execute(
-        text(
-            f"SELECT MAX(period) FROM skill_trends WHERE {' AND '.join(conditions)}"
-        ),
+        text(f"SELECT MAX(period) FROM skill_trends WHERE {' AND '.join(conditions)}"),
         params,
     ).scalar()
 
@@ -128,9 +127,9 @@ def skill_trends(
 
 @router.get("/movers")
 def skill_movers(
-    limit:   int            = Query(8, ge=1, le=20),
+    limit: int = Query(8, ge=1, le=20),
     country: Optional[str] = Query(None, description="2-letter country code"),
-    db:      Connection     = Depends(get_db),
+    db: Connection = Depends(get_db),
 ):
     """
     Fastest rising and declining skills, computed as (7d daily rate) / (30d daily rate).
@@ -157,7 +156,7 @@ def skill_movers(
     if not latest_7 or not latest_30:
         return {"data": {"rising": [], "declining": []}}
 
-    params["period_7"]  = latest_7
+    params["period_7"] = latest_7
     params["period_30"] = latest_30
 
     rows = db.execute(
@@ -199,8 +198,17 @@ def skill_movers(
             "momentum": float(r[3]) if r[3] is not None else 1.0,
         }
 
-    rising   = [row_to_dict(r) for r in rows          if r[3] and float(r[3]) > 1.1][:limit]
-    declining = [row_to_dict(r) for r in reversed(rows) if r[3] and float(r[3]) < 0.9][:limit]
+    all_rows = [row_to_dict(r) for r in rows]
+
+    # Primary: strict thresholds (momentum > 1.1 rising, < 0.9 declining)
+    rising = [r for r in all_rows if r["momentum"] > 1.1][:limit]
+    declining = [r for r in reversed(all_rows) if r["momentum"] < 0.9][:limit]
+
+    # Fallback: if not enough data yet, show top/bottom N by momentum
+    if len(rising) < 3 and all_rows:
+        rising = sorted(all_rows, key=lambda r: r["momentum"], reverse=True)[:limit]
+    if len(declining) < 3 and all_rows:
+        declining = sorted(all_rows, key=lambda r: r["momentum"])[:limit]
 
     return {"data": {"rising": rising, "declining": declining}}
 

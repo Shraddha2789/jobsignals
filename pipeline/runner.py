@@ -23,6 +23,8 @@ from ingestion.adapters.jobicy import JobicyAdapter
 from ingestion.adapters.remoteok import RemoteOKAdapter
 from ingestion.adapters.remotive import RemotiveAdapter
 from ingestion.adapters.serpapi import SerpAPIAdapter
+from ingestion.adapters.themuse import TheMuseAdapter
+from ingestion.adapters.weworkremotely import WeWorkRemotelyAdapter
 from ingestion.adapters.seed import COMPANIES, SeedAdapter
 from ingestion.models import RawJobPosting
 from pipeline.aggregations import run_all_aggregations
@@ -315,6 +317,8 @@ def run_all_sources() -> dict[str, int]:
         (ArbeitnowAdapter(), "Arbeitnow"),
         (HimalayasAdapter(), "Himalayas"),
         (JobicyAdapter(), "Jobicy"),
+        (TheMuseAdapter(), "The Muse"),
+        (WeWorkRemotelyAdapter(), "We Work Remotely"),
         # ── API key required ──────────────────────────────────────────────────
         (AdzunaAdapter(country="us"), "Adzuna US"),
         (AdzunaAdapter(country="gb"), "Adzuna GB"),

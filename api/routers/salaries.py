@@ -1,4 +1,5 @@
 """GET /v1/salaries — salary benchmarks by role, seniority, and location."""
+
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -14,20 +15,25 @@ from api.schemas.responses import APIResponse, SalaryBenchmarkOut
 router = APIRouter(prefix="/salaries", tags=["Salaries"])
 
 TITLE_FAMILIES = [
-    "Data Engineering", "Data Science", "ML Engineering",
-    "Software Engineering", "Product Management",
+    "Data Engineering",
+    "Data Science",
+    "ML Engineering",
+    "Software Engineering",
+    "Product Management",
 ]
 SENIORITY_LEVELS = ["intern", "junior", "mid", "senior", "staff", "principal", "executive"]
 
 
 @router.get("/benchmark", response_model=APIResponse[SalaryBenchmarkOut])
 def salary_benchmark(
-    title_family:  str           = Query(..., description="Role family"),
-    seniority:     str           = Query(..., description="Seniority level"),
-    country:       str           = Query("US"),
+    title_family: str = Query(..., description="Role family"),
+    seniority: str = Query(..., description="Seniority level"),
+    country: Optional[str] = Query(
+        None, description="2-letter country code. Omit for global benchmark."
+    ),
     company_stage: Optional[str] = Query(None),
-    window_days:   int           = Query(90, enum=[30, 90, 365]),
-    db:            Connection    = Depends(get_db),
+    window_days: int = Query(90, enum=[30, 90, 365]),
+    db: Connection = Depends(get_db),
 ):
     if title_family not in TITLE_FAMILIES:
         raise HTTPException(
@@ -41,17 +47,17 @@ def salary_benchmark(
         )
 
     since = date.today() - timedelta(days=window_days)
-    params: dict = {
-        "family":   title_family,
-        "seniority": seniority,
-        "country":  country.upper(),
-        "since":    since,
-    }
+    params: dict = {"family": title_family, "seniority": seniority, "since": since}
 
-    extra_join  = ""
+    country_clause = ""
+    if country and country.upper() != "GLOBAL":
+        country_clause = "AND jp.location_country = :country"
+        params["country"] = country.upper()
+
+    extra_join = ""
     extra_where = ""
     if company_stage:
-        extra_join  = "JOIN companies c ON c.company_id = jp.company_id"
+        extra_join = "JOIN companies c ON c.company_id = jp.company_id"
         extra_where = "AND c.company_stage = :stage"
         params["stage"] = company_stage
 
@@ -69,7 +75,7 @@ def salary_benchmark(
             {extra_join}
             WHERE jp.title_family    = :family
               AND jp.seniority_level = :seniority
-              AND jp.location_country = :country
+              {country_clause}
               AND jp.salary_min IS NOT NULL
               AND jp.posted_at >= :since
               {extra_where}
@@ -85,15 +91,16 @@ def salary_benchmark(
             status_code=404,
             detail=(
                 f"Insufficient data: only {sample_size} postings with salary for "
-                f"{title_family} / {seniority} in {country}. Minimum 10 required."
+                f"{title_family} / {seniority} {'globally' if not country else 'in ' + country}. Minimum 10 required."
             ),
         )
 
+    effective_country = country.upper() if country else "GLOBAL"
     return APIResponse(
         data=SalaryBenchmarkOut(
             title_family=title_family,
             seniority=seniority,
-            country=country.upper(),
+            country=effective_country,
             percentile_10=row[1],
             percentile_25=row[2],
             percentile_50=row[3],
