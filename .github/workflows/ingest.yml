@@ -2,8 +2,8 @@ name: Ingest Jobs
 
 # ── Runs every 3 hours + can be triggered manually ────────────────────────────
 on:
-  schedule:
-    - cron: "0 */3 * * *"   # every 3 hours (00:00, 03:00, 06:00 ... UTC)
+  # schedule:
+  #   - cron: "0 */3 * * *"   # every 3 hours (00:00, 03:00, 06:00 ... UTC)
   workflow_dispatch:         # manual trigger from GitHub Actions tab
 
 env:
