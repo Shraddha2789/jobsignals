@@ -1,4 +1,5 @@
 """GET /v1/companies — company lookup and hiring signals."""
+
 from __future__ import annotations
 
 import json
@@ -12,7 +13,10 @@ from sqlalchemy.engine import Connection
 
 from api.deps import get_db
 from api.schemas.responses import (
-    APIResponse, CompanyOut, CompanySignalsOut, HiringTrendPoint, Meta,
+    APIResponse,
+    CompanySignalsOut,
+    HiringTrendPoint,
+    Meta,
 )
 
 router = APIRouter(prefix="/companies", tags=["Companies"])
@@ -20,12 +24,12 @@ router = APIRouter(prefix="/companies", tags=["Companies"])
 
 @router.get("", response_model=APIResponse[list[dict]])
 def list_companies(
-    q:             Optional[str] = Query(None, description="Company name search"),
-    industry:      Optional[str] = Query(None),
+    q: Optional[str] = Query(None, description="Company name search"),
+    industry: Optional[str] = Query(None),
     company_stage: Optional[str] = Query(None),
-    country:       Optional[str] = Query(None),
-    page_size:     int           = Query(50, ge=1, le=200),
-    db:            Connection    = Depends(get_db),
+    country: Optional[str] = Query(None),
+    page_size: int = Query(50, ge=1, le=200),
+    db: Connection = Depends(get_db),
 ):
     conditions = ["jp.source_platform != 'seed'", "jp.is_active = TRUE"]
     params: dict = {"page_size": page_size}
@@ -47,8 +51,9 @@ def list_companies(
 
     where = " AND ".join(conditions)
 
-    rows = db.execute(
-        text(f"""
+    rows = (
+        db.execute(
+            text(f"""
             SELECT c.company_id, c.company_name, c.industry, c.company_stage,
                    c.employee_count_range, c.hq_country, c.domain,
                    COUNT(jp.job_id)                         AS active_jobs,
@@ -67,8 +72,11 @@ def list_companies(
             ORDER BY active_jobs DESC
             LIMIT :page_size
         """),
-        params,
-    ).mappings().fetchall()
+            params,
+        )
+        .mappings()
+        .fetchall()
+    )
 
     total = db.execute(
         text(f"""
@@ -83,8 +91,16 @@ def list_companies(
     result = []
     for r in rows:
         r = dict(r)
-        r["top_skills"] = r["top_skills"] if isinstance(r["top_skills"], list) else (json.loads(r["top_skills"]) if r["top_skills"] else [])
-        r["top_roles"]  = r["top_roles"]  if isinstance(r["top_roles"],  list) else (json.loads(r["top_roles"])  if r["top_roles"]  else [])
+        r["top_skills"] = (
+            r["top_skills"]
+            if isinstance(r["top_skills"], list)
+            else (json.loads(r["top_skills"]) if r["top_skills"] else [])
+        )
+        r["top_roles"] = (
+            r["top_roles"]
+            if isinstance(r["top_roles"], list)
+            else (json.loads(r["top_roles"]) if r["top_roles"] else [])
+        )
         r["company_id"] = str(r["company_id"])
         result.append(r)
 
@@ -97,13 +113,17 @@ def list_companies(
 @router.get("/{company_id}/signals", response_model=APIResponse[CompanySignalsOut])
 def company_signals(
     company_id: UUID,
-    window:     int        = Query(90, enum=[30, 90, 365]),
-    db:         Connection = Depends(get_db),
+    window: int = Query(90, enum=[30, 90, 365]),
+    db: Connection = Depends(get_db),
 ):
-    company = db.execute(
-        text("SELECT * FROM companies WHERE company_id = :cid"),
-        {"cid": str(company_id)},
-    ).mappings().fetchone()
+    company = (
+        db.execute(
+            text("SELECT * FROM companies WHERE company_id = :cid"),
+            {"cid": str(company_id)},
+        )
+        .mappings()
+        .fetchone()
+    )
 
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
@@ -126,20 +146,31 @@ def company_signals(
     if not signals_row:
         # Fallback: compute from raw postings if signals not yet aggregated
         since = today - timedelta(days=window)
-        raw_count = db.execute(
-            text(
-                "SELECT COUNT(*) FROM job_postings "
-                "WHERE company_id = :cid AND posted_at >= :since"
-            ),
-            {"cid": str(company_id), "since": since},
-        ).scalar() or 0
+        raw_count = (
+            db.execute(
+                text(
+                    "SELECT COUNT(*) FROM job_postings "
+                    "WHERE company_id = :cid AND posted_at >= :since"
+                ),
+                {"cid": str(company_id), "since": since},
+            ).scalar()
+            or 0
+        )
         total, active, velocity = raw_count, 0, 0.0
         top_skills, top_roles = [], []
         med_min = med_max = None
     else:
         total, active, velocity, top_skills_raw, top_roles_raw, med_min, med_max = signals_row
-        top_skills = top_skills_raw if isinstance(top_skills_raw, list) else (json.loads(top_skills_raw) if top_skills_raw else [])
-        top_roles  = top_roles_raw  if isinstance(top_roles_raw,  list) else (json.loads(top_roles_raw)  if top_roles_raw  else [])
+        top_skills = (
+            top_skills_raw
+            if isinstance(top_skills_raw, list)
+            else (json.loads(top_skills_raw) if top_skills_raw else [])
+        )
+        top_roles = (
+            top_roles_raw
+            if isinstance(top_roles_raw, list)
+            else (json.loads(top_roles_raw) if top_roles_raw else [])
+        )
 
     # Monthly trend for sparkline (last 6 months)
     trend_rows = db.execute(

@@ -1,4 +1,5 @@
 """GET/POST /v1/insights — AI-powered job market analysis with real tool calling."""
+
 from __future__ import annotations
 
 import json
@@ -18,8 +19,8 @@ from pipeline.normalization.skill_extractor import SKILLS_TAXONOMY
 router = APIRouter(prefix="/insights", tags=["Insights"])
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-DEFAULT_MODEL  = "llama-3.1-8b-instant"
-MAX_TOOL_ROUNDS = 3   # max agentic loop iterations before forcing a final answer
+DEFAULT_MODEL = "llama-3.1-8b-instant"
+MAX_TOOL_ROUNDS = 3  # max agentic loop iterations before forcing a final answer
 
 CACHE_TTL = 600  # 10 minutes
 
@@ -114,7 +115,10 @@ TOOLS = [
                         "type": "string",
                         "description": "ISO 2-letter code. Defaults to US if omitted.",
                     },
-                    "window_days": {"type": "integer", "description": "Lookback window: 30, 90, or 365 days."},
+                    "window_days": {
+                        "type": "integer",
+                        "description": "Lookback window: 30, 90, or 365 days.",
+                    },
                 },
                 "required": ["title_family"],
             },
@@ -135,7 +139,10 @@ TOOLS = [
                         "type": "string",
                         "description": "Partial or full company name (case-insensitive search)",
                     },
-                    "window_days": {"type": "integer", "description": "Lookback window: 30, 90, or 365 days."},
+                    "window_days": {
+                        "type": "integer",
+                        "description": "Lookback window: 30, 90, or 365 days.",
+                    },
                 },
                 "required": ["company_name"],
             },
@@ -166,12 +173,13 @@ TOOLS = [
 
 # ── Tool implementations ───────────────────────────────────────────────────────
 
+
 def _tool_skill_trends(db: Connection, args: dict, context_country: Optional[str] = None) -> dict:
     title_family = args.get("title_family")
-    raw_country  = args.get("country") or context_country
-    country      = raw_country.upper() if raw_country else None
-    window       = int(args.get("window_days", 30))
-    limit        = min(int(args.get("limit", 15)), 25)
+    raw_country = args.get("country") or context_country
+    country = raw_country.upper() if raw_country else None
+    window = int(args.get("window_days", 30))
+    limit = min(int(args.get("limit", 15)), 25)
 
     base_conds = ["window_days = :window"]
     params: dict = {"window": window, "limit": limit}
@@ -257,11 +265,11 @@ def _tool_skill_trends(db: Connection, args: dict, context_country: Optional[str
 
 def _tool_job_summary(db: Connection, args: dict, context_country: Optional[str] = None) -> dict:
     title_family = args.get("title_family")
-    raw_country  = args.get("country") or context_country
-    country      = raw_country.upper() if raw_country else None
-    window       = int(args.get("window_days", 30))
+    raw_country = args.get("country") or context_country
+    country = raw_country.upper() if raw_country else None
+    window = int(args.get("window_days", 30))
 
-    conds  = [
+    conds = [
         "is_active = TRUE",
         f"posted_at >= NOW() - INTERVAL '{window} days'",
         "source_platform != 'seed'",
@@ -276,11 +284,15 @@ def _tool_job_summary(db: Connection, args: dict, context_country: Optional[str]
 
     where = " AND ".join(conds)
 
-    total    = db.execute(text(f"SELECT COUNT(*) FROM job_postings WHERE {where}"), params).scalar() or 0
+    total = (
+        db.execute(text(f"SELECT COUNT(*) FROM job_postings WHERE {where}"), params).scalar() or 0
+    )
     modality = {
         r[0] or "unspecified": r[1]
         for r in db.execute(
-            text(f"SELECT work_modality, COUNT(*) FROM job_postings WHERE {where} GROUP BY 1 ORDER BY 2 DESC"),
+            text(
+                f"SELECT work_modality, COUNT(*) FROM job_postings WHERE {where} GROUP BY 1 ORDER BY 2 DESC"
+            ),
             params,
         ).fetchall()
     }
@@ -333,11 +345,13 @@ def _tool_job_summary(db: Connection, args: dict, context_country: Optional[str]
     }
 
 
-def _tool_salary_benchmark(db: Connection, args: dict, context_country: Optional[str] = None) -> dict:
+def _tool_salary_benchmark(
+    db: Connection, args: dict, context_country: Optional[str] = None
+) -> dict:
     title_family = args.get("title_family")
-    raw_country  = args.get("country") or context_country
-    country      = raw_country.upper() if raw_country else "US"
-    window       = int(args.get("window_days", 90))
+    raw_country = args.get("country") or context_country
+    country = raw_country.upper() if raw_country else "US"
+    window = int(args.get("window_days", 90))
 
     if not title_family:
         return {"error": "title_family is required for salary benchmarks."}
@@ -372,8 +386,13 @@ def _tool_salary_benchmark(db: Connection, args: dict, context_country: Optional
         }
 
     currency_map = {
-        "US": "USD", "GB": "GBP", "CA": "CAD", "AU": "AUD",
-        "DE": "EUR", "IN": "INR", "SG": "SGD",
+        "US": "USD",
+        "GB": "GBP",
+        "CA": "CAD",
+        "AU": "AUD",
+        "DE": "EUR",
+        "IN": "INR",
+        "SG": "SGD",
     }
     return {
         "title_family": title_family,
@@ -392,9 +411,11 @@ def _tool_salary_benchmark(db: Connection, args: dict, context_country: Optional
     }
 
 
-def _tool_company_signals(db: Connection, args: dict, context_country: Optional[str] = None) -> dict:
+def _tool_company_signals(
+    db: Connection, args: dict, context_country: Optional[str] = None
+) -> dict:
     company_name = args.get("company_name", "")
-    window       = int(args.get("window_days", 90))
+    window = int(args.get("window_days", 90))
 
     company = db.execute(
         text(
@@ -421,20 +442,33 @@ def _tool_company_signals(db: Connection, args: dict, context_country: Optional[
     ).fetchone()
 
     if not signals:
-        count = db.execute(
-            text(
-                f"SELECT COUNT(*) FROM job_postings "
-                f"WHERE company_id = :cid AND posted_at >= NOW() - INTERVAL '{window} days'"
-            ),
-            {"cid": cid},
-        ).scalar() or 0
+        count = (
+            db.execute(
+                text(
+                    f"SELECT COUNT(*) FROM job_postings "
+                    f"WHERE company_id = :cid AND posted_at >= NOW() - INTERVAL '{window} days'"
+                ),
+                {"cid": cid},
+            ).scalar()
+            or 0
+        )
         return {
-            "company": company[1], "industry": company[2],
-            "window_days": window, "total_postings": count,
+            "company": company[1],
+            "industry": company[2],
+            "window_days": window,
+            "total_postings": count,
         }
 
-    top_skills = signals[3] if isinstance(signals[3], list) else (json.loads(signals[3]) if signals[3] else [])
-    top_roles  = signals[4] if isinstance(signals[4], list) else (json.loads(signals[4]) if signals[4] else [])
+    top_skills = (
+        signals[3]
+        if isinstance(signals[3], list)
+        else (json.loads(signals[3]) if signals[3] else [])
+    )
+    top_roles = (
+        signals[4]
+        if isinstance(signals[4], list)
+        else (json.loads(signals[4]) if signals[4] else [])
+    )
 
     return {
         "company": company[1],
@@ -448,32 +482,53 @@ def _tool_company_signals(db: Connection, args: dict, context_country: Optional[
     }
 
 
-def _tool_market_overview(db: Connection, args: dict, context_country: Optional[str] = None) -> dict:
+def _tool_market_overview(
+    db: Connection, args: dict, context_country: Optional[str] = None
+) -> dict:
     raw_country = args.get("country") or context_country
-    country     = raw_country.upper() if raw_country else None
+    country = raw_country.upper() if raw_country else None
 
     p: dict = {}
     cc = "AND location_country = :country" if country else ""
     if country:
         p["country"] = country
 
-    total    = db.execute(text(f"SELECT COUNT(*) FROM job_postings WHERE source_platform != 'seed' {cc}"), p).scalar() or 0
-    active   = db.execute(text(f"SELECT COUNT(*) FROM job_postings WHERE is_active = TRUE AND source_platform != 'seed' {cc}"), p).scalar() or 0
-    n_skills = db.execute(
-        text(
-            f"SELECT COUNT(DISTINCT js.skill_name) FROM job_skills js "
-            f"JOIN job_postings jp ON jp.job_id = js.job_id "
-            f"WHERE jp.source_platform != 'seed' {cc}"
-        ),
-        p,
-    ).scalar() or 0
-    n_companies = db.execute(
-        text(
-            f"SELECT COUNT(DISTINCT company_id) FROM job_postings "
-            f"WHERE is_active = TRUE AND source_platform != 'seed' {cc} AND company_id IS NOT NULL"
-        ),
-        p,
-    ).scalar() or 0
+    total = (
+        db.execute(
+            text(f"SELECT COUNT(*) FROM job_postings WHERE source_platform != 'seed' {cc}"), p
+        ).scalar()
+        or 0
+    )
+    active = (
+        db.execute(
+            text(
+                f"SELECT COUNT(*) FROM job_postings WHERE is_active = TRUE AND source_platform != 'seed' {cc}"
+            ),
+            p,
+        ).scalar()
+        or 0
+    )
+    n_skills = (
+        db.execute(
+            text(
+                f"SELECT COUNT(DISTINCT js.skill_name) FROM job_skills js "
+                f"JOIN job_postings jp ON jp.job_id = js.job_id "
+                f"WHERE jp.source_platform != 'seed' {cc}"
+            ),
+            p,
+        ).scalar()
+        or 0
+    )
+    n_companies = (
+        db.execute(
+            text(
+                f"SELECT COUNT(DISTINCT company_id) FROM job_postings "
+                f"WHERE is_active = TRUE AND source_platform != 'seed' {cc} AND company_id IS NOT NULL"
+            ),
+            p,
+        ).scalar()
+        or 0
+    )
     top_family = db.execute(
         text(
             f"SELECT title_family, COUNT(*) AS cnt FROM job_postings "
@@ -494,10 +549,15 @@ def _tool_market_overview(db: Connection, args: dict, context_country: Optional[
     }
     salary_pct = 0.0
     if total:
-        with_salary = db.execute(
-            text(f"SELECT COUNT(*) FROM job_postings WHERE source_platform != 'seed' {cc} AND salary_min IS NOT NULL"),
-            p,
-        ).scalar() or 0
+        with_salary = (
+            db.execute(
+                text(
+                    f"SELECT COUNT(*) FROM job_postings WHERE source_platform != 'seed' {cc} AND salary_min IS NOT NULL"
+                ),
+                p,
+            ).scalar()
+            or 0
+        )
         salary_pct = round(with_salary / total * 100, 1)
 
     return {
@@ -514,17 +574,27 @@ def _tool_market_overview(db: Connection, args: dict, context_country: Optional[
 
 # ── Tool dispatcher ────────────────────────────────────────────────────────────
 
-def _execute_tool(name: str, args: dict, db: Connection, context_country: Optional[str] = None) -> str:
+
+def _execute_tool(
+    name: str, args: dict, db: Connection, context_country: Optional[str] = None
+) -> str:
     # Groq's llama model sometimes serialises integer args as strings — coerce them.
     _INT_ARGS = {"window_days", "limit", "window", "top_n"}
+
     def _to_int(v):
-        try: return int(float(v))
-        except (ValueError, TypeError): return v
-    args = {k: (_to_int(v) if k in _INT_ARGS and isinstance(v, str) else v) for k, v in (args or {}).items()}
+        try:
+            return int(float(v))
+        except (ValueError, TypeError):
+            return v
+
+    args = {
+        k: (_to_int(v) if k in _INT_ARGS and isinstance(v, str) else v)
+        for k, v in (args or {}).items()
+    }
 
     dispatch = {
-        "get_skill_trends":    _tool_skill_trends,
-        "get_job_summary":     _tool_job_summary,
+        "get_skill_trends": _tool_skill_trends,
+        "get_job_summary": _tool_job_summary,
         "get_salary_benchmark": _tool_salary_benchmark,
         "get_company_signals": _tool_company_signals,
         "get_market_overview": _tool_market_overview,
@@ -539,6 +609,7 @@ def _execute_tool(name: str, args: dict, db: Connection, context_country: Option
 
 
 # ── LLM client ─────────────────────────────────────────────────────────────────
+
 
 def _get_client() -> OpenAI:
     api_key = os.environ.get("GROQ_API_KEY")
@@ -588,6 +659,7 @@ seniority distribution, top hiring companies, salary benchmarks (US/GB/CA/AU)
 
 # ── Agentic runner ─────────────────────────────────────────────────────────────
 
+
 def _run_agentic_insight(
     question: str,
     title_family: Optional[str],
@@ -613,7 +685,7 @@ def _run_agentic_insight(
 
     messages: list[dict] = [
         {"role": "system", "content": _SYSTEM_PROMPT + context_note},
-        {"role": "user",   "content": question},
+        {"role": "user", "content": question},
     ]
     sources_used: set[str] = set()
 
@@ -632,21 +704,23 @@ def _run_agentic_insight(
             return msg.content or "No analysis returned.", list(sources_used)
 
         # Append the assistant turn (with tool call requests)
-        messages.append({
-            "role": "assistant",
-            "content": msg.content or "",
-            "tool_calls": [
-                {
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {
-                        "name": tc.function.name,
-                        "arguments": tc.function.arguments,
-                    },
-                }
-                for tc in msg.tool_calls
-            ],
-        })
+        messages.append(
+            {
+                "role": "assistant",
+                "content": msg.content or "",
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        },
+                    }
+                    for tc in msg.tool_calls
+                ],
+            }
+        )
 
         # Execute every tool call and feed results back
         for tc in msg.tool_calls:
@@ -659,20 +733,24 @@ def _run_agentic_insight(
             result = _execute_tool(fn_name, fn_args, db, context_country)
             sources_used.add(fn_name)
 
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tc.id,
-                "content": result,
-            })
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": result,
+                }
+            )
 
     # Exhausted rounds — force a final synthesis
-    messages.append({
-        "role": "user",
-        "content": (
-            "Based on all the data you have gathered, please provide your "
-            "comprehensive final analysis now."
-        ),
-    })
+    messages.append(
+        {
+            "role": "user",
+            "content": (
+                "Based on all the data you have gathered, please provide your "
+                "comprehensive final analysis now."
+            ),
+        }
+    )
     final = client.chat.completions.create(
         model=model,
         max_tokens=2048,
@@ -682,6 +760,7 @@ def _run_agentic_insight(
 
 
 # ── Shared entry point ─────────────────────────────────────────────────────────
+
 
 def _run_insight(
     question: str,
@@ -696,7 +775,7 @@ def _run_insight(
         return _insight_cache[_cache_key][1]
 
     client = _get_client()
-    model  = os.environ.get("INSIGHTS_MODEL", DEFAULT_MODEL)
+    model = os.environ.get("INSIGHTS_MODEL", DEFAULT_MODEL)
 
     try:
         analysis, sources = _run_agentic_insight(
@@ -721,19 +800,20 @@ def _run_insight(
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
 
+
 @router.get("", response_model=APIResponse[InsightOut])
 def get_insight_get(
-    q:            str            = Query(..., description="Your job market question"),
-    title_family: Optional[str]  = Query(None, description="Scope to a role family"),
-    country:      Optional[str]  = Query(
+    q: str = Query(..., description="Your job market question"),
+    title_family: Optional[str] = Query(None, description="Scope to a role family"),
+    country: Optional[str] = Query(
         None,
         description=(
             "2-letter country context hint (e.g. US, IN, GB). "
             "Omit for global scope. The AI can still access all countries regardless."
         ),
     ),
-    window:       int            = Query(30, enum=[7, 30, 90, 365]),
-    db:           Connection     = Depends(get_db),
+    window: int = Query(30, enum=[7, 30, 90, 365]),
+    db: Connection = Depends(get_db),
 ):
     """GET version — used by the dashboard."""
     return _run_insight(q, title_family, country.upper() if country else None, window, db)

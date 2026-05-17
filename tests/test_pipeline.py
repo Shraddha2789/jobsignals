@@ -1,5 +1,4 @@
 """Unit tests for pipeline normalization logic — no DB required."""
-import pytest
 
 from ingestion.adapters.seed import SeedAdapter
 from pipeline.normalization.skill_extractor import extract_skills

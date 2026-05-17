@@ -10,6 +10,7 @@ Run:
     python -m scripts.classify_titles --dry-run        # preview only, no DB writes
     python -m scripts.classify_titles --batch-size 30  # default 25
 """
+
 from __future__ import annotations
 
 import argparse
@@ -63,6 +64,7 @@ Rules:
 def _get_client():
     try:
         import anthropic
+
         api_key = os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
             raise RuntimeError("ANTHROPIC_API_KEY not set")
@@ -79,7 +81,6 @@ def _classify_batch(client, batch: list[dict]) -> list[dict]:
     """
     user_msg = json.dumps([{"id": item["id"], "title": item["title"]} for item in batch])
 
-    import anthropic
     response = client.messages.create(
         model="claude-opus-4-6",
         max_tokens=1024,
@@ -109,7 +110,9 @@ def _classify_batch(client, batch: list[dict]) -> list[dict]:
 def main():
     parser = argparse.ArgumentParser(description="LLM title classifier for 'Other' job postings")
     parser.add_argument("--dry-run", action="store_true", help="Preview without writing to DB")
-    parser.add_argument("--batch-size", type=int, default=25, help="Titles per Claude call (default 25)")
+    parser.add_argument(
+        "--batch-size", type=int, default=25, help="Titles per Claude call (default 25)"
+    )
     parser.add_argument("--limit", type=int, default=0, help="Max rows to process (0=all)")
     args = parser.parse_args()
 
@@ -145,10 +148,10 @@ def main():
 
     # Build batches
     items = [
-        {"id": str(r[0]), "title": r[2] or r[1]}   # prefer normalized, fall back to raw
+        {"id": str(r[0]), "title": r[2] or r[1]}  # prefer normalized, fall back to raw
         for r in rows
     ]
-    batches = [items[i:i + args.batch_size] for i in range(0, len(items), args.batch_size)]
+    batches = [items[i : i + args.batch_size] for i in range(0, len(items), args.batch_size)]
 
     updates: list[dict] = []
     errors = 0
@@ -158,7 +161,9 @@ def main():
         TextColumn("[progress.description]{task.description}"),
         console=console,
     ) as progress:
-        task = progress.add_task(f"Classifying {len(rows)} titles in {len(batches)} batches...", total=len(batches))
+        task = progress.add_task(
+            f"Classifying {len(rows)} titles in {len(batches)} batches...", total=len(batches)
+        )
 
         for batch in batches:
             try:
@@ -173,6 +178,7 @@ def main():
 
     # Tally
     from collections import Counter
+
     tally = Counter(u["family"] for u in updates)
     console.print("\n  [bold]Classification results:[/]")
     for fam, cnt in sorted(tally.items(), key=lambda x: -x[1]):
@@ -188,7 +194,9 @@ def main():
     with get_connection() as conn:
         for u in updates:
             conn.execute(
-                text("UPDATE job_postings SET title_family = :fam WHERE job_id = CAST(:id AS uuid)"),
+                text(
+                    "UPDATE job_postings SET title_family = :fam WHERE job_id = CAST(:id AS uuid)"
+                ),
                 {"fam": u["family"], "id": u["id"]},
             )
 
