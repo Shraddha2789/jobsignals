@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>JobSignals — Market Intelligence Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 /* ── Dark theme (default) ── */
@@ -64,7 +65,11 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;color:var(--text2);transition:all 0.15s;border-left:2px solid transparent;font-size:13px;font-weight:500;user-select:none}
 .nav-item:hover{color:var(--text);background:var(--accent-glow)}
 .nav-item.active{color:var(--accent);background:var(--accent-glow);border-left-color:var(--accent)}
-.nav-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.material-icons{font-style:normal;font-weight:400;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;direction:ltr;vertical-align:middle}
+.nav-icon.material-icons{font-size:17px;width:18px}
+.kpi-icon.material-icons{font-size:26px}
+.mi-sm{font-size:14px!important}
+.mi-lg{font-size:36px!important}
 .sb-footer{margin-top:auto;padding:14px 18px;border-top:1px solid var(--border)}
 .live-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3)}
 .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
@@ -399,7 +404,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 <nav class="sidebar">
   <div class="sb-logo">
     <div class="sb-logo-row">
-      <div class="sb-logo-icon">📡</div>
+      <div class="sb-logo-icon"><span class="material-icons mi-lg" style="color:var(--accent)">radar</span></div>
       <div>
         <div class="sb-logo-title">JobSignals</div>
         <div class="sb-logo-sub">Market Intelligence</div>
@@ -423,32 +428,32 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
   </div>
   <div class="sb-section-label">Analytics</div>
   <div class="nav-item active" data-page="overview">
-    <span class="nav-icon">🏠</span> Overview
+    <span class="nav-icon material-icons">home</span> Overview
   </div>
   <div class="nav-item" data-page="skills">
-    <span class="nav-icon">📊</span> Skill Trends
+    <span class="nav-icon material-icons">bar_chart</span> Skill Trends
   </div>
   <div class="nav-item" data-page="jobs">
-    <span class="nav-icon">💼</span> Job Explorer
+    <span class="nav-icon material-icons">work</span> Job Explorer
   </div>
   <div class="nav-item" data-page="companies">
-    <span class="nav-icon">🏢</span> Companies
+    <span class="nav-icon material-icons">business</span> Companies
   </div>
   <div class="nav-item" data-page="salaries">
-    <span class="nav-icon">💰</span> Salary Benchmark
+    <span class="nav-icon material-icons">payments</span> Salary Benchmark
   </div>
   <div class="nav-item" data-page="ai">
-    <span class="nav-icon">✨</span> AI Insights
+    <span class="nav-icon material-icons">auto_awesome</span> AI Insights
   </div>
   <div class="sb-section-label">Developer</div>
   <div class="nav-item" data-page="datasets">
-    <span class="nav-icon">🗄️</span> Datasets
+    <span class="nav-icon material-icons">storage</span> Datasets
   </div>
   <div class="nav-item" data-page="apiexplorer">
-    <span class="nav-icon">🔌</span> API Explorer
+    <span class="nav-icon material-icons">api</span> API Explorer
   </div>
   <div class="theme-toggle" onclick="toggleTheme()" title="Switch theme">
-    <span class="theme-toggle-label" id="themeLabel">☀️ Light Mode</span>
+    <span class="theme-toggle-label" id="themeLabel"><span class="material-icons mi-sm">light_mode</span> Light Mode</span>
     <div class="toggle-track" id="themeTrack"><div class="toggle-thumb"></div></div>
   </div>
   <div class="sb-footer">
@@ -475,20 +480,20 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
   <div style="padding:24px 28px">
     <!-- KPIs -->
     <div class="kpi-grid" id="kpi-row">
-      <div class="kpi-card kpi-c1"><span class="kpi-icon">📋</span><div class="kpi-value">402</div><div class="kpi-label">Total Postings</div><div class="kpi-trend trend-up">▲ 12.4%</div></div>
-      <div class="kpi-card kpi-c2"><span class="kpi-icon">🛠️</span><div class="kpi-value">42</div><div class="kpi-label">Unique Skills</div><div class="kpi-trend trend-up">▲ 4 new</div></div>
-      <div class="kpi-card kpi-c3"><span class="kpi-icon">🏢</span><div class="kpi-value">175</div><div class="kpi-label">Companies Hiring</div><div class="kpi-trend trend-up">▲ 8.1%</div></div>
-      <div class="kpi-card kpi-c4"><span class="kpi-icon">🗂️</span><div class="kpi-value">12</div><div class="kpi-label">Role Families</div><div class="kpi-trend trend-flat">— Stable</div></div>
+      <div class="kpi-card kpi-c1"><span class="kpi-icon material-icons">article</span><div class="kpi-value">402</div><div class="kpi-label">Total Postings</div><div class="kpi-trend trend-up"><span class="material-icons mi-sm">arrow_upward</span> 12.4%</div></div>
+      <div class="kpi-card kpi-c2"><span class="kpi-icon material-icons">build</span><div class="kpi-value">42</div><div class="kpi-label">Unique Skills</div><div class="kpi-trend trend-up"><span class="material-icons mi-sm">arrow_upward</span> 4 new</div></div>
+      <div class="kpi-card kpi-c3"><span class="kpi-icon material-icons">business</span><div class="kpi-value">175</div><div class="kpi-label">Companies Hiring</div><div class="kpi-trend trend-up"><span class="material-icons mi-sm">arrow_upward</span> 8.1%</div></div>
+      <div class="kpi-card kpi-c4"><span class="kpi-icon material-icons">category</span><div class="kpi-value">12</div><div class="kpi-label">Role Families</div><div class="kpi-trend trend-flat">— Stable</div></div>
     </div>
 
     <!-- Market Pulse -->
     <div class="market-pulse-grid" id="marketPulseRow">
       <div class="card card-green">
-        <div class="section-title">⬆ Rising Skills <span class="badge">7d vs 30d momentum</span></div>
+        <div class="section-title"><span class="material-icons mi-sm">trending_up</span> Rising Skills <span class="badge">7d vs 30d momentum</span></div>
         <div id="risingSkillsWrap"><div class="skeleton" style="height:140px"></div></div>
       </div>
       <div class="card card-accent">
-        <div class="section-title">🏆 Top Hiring Companies <span class="badge">by velocity</span></div>
+        <div class="section-title"><span class="material-icons mi-sm">emoji_events</span> Top Hiring Companies <span class="badge">by velocity</span></div>
         <div id="hotCompaniesWrap"><div class="skeleton" style="height:140px"></div></div>
       </div>
     </div>
@@ -574,11 +579,11 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
     <!-- Skill Movers (rising vs declining) -->
     <div class="movers-grid" id="skillMoversRow">
       <div class="card" style="border-top:2px solid var(--green)">
-        <div class="movers-col-title" style="color:var(--green)">⬆ Rising Skills <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">7d acceleration</span></div>
+        <div class="movers-col-title" style="color:var(--green)"><span class="material-icons mi-sm">trending_up</span> Rising Skills <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">7d acceleration</span></div>
         <div id="risingMoversWrap"><div class="skeleton" style="height:160px"></div></div>
       </div>
       <div class="card" style="border-top:2px solid var(--red)">
-        <div class="movers-col-title" style="color:var(--red)">⬇ Declining Skills <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">cooling demand</span></div>
+        <div class="movers-col-title" style="color:var(--red)"><span class="material-icons mi-sm">trending_down</span> Declining Skills <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">cooling demand</span></div>
         <div id="decliningMoversWrap"><div class="skeleton" style="height:160px"></div></div>
       </div>
     </div>
@@ -771,7 +776,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
     <div id="salaryResults">
       <!-- Default empty state -->
       <div class="salary-empty">
-        <div class="salary-empty-icon">💰</div>
+        <div class="salary-empty-icon"><span class="material-icons mi-lg" style="color:var(--accent)">payments</span></div>
         <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px">Select a role to see salary ranges</div>
         <div style="font-size:13px">Choose a role family, level, and country above — then click Calculate</div>
       </div>
@@ -827,9 +832,9 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 
     <div class="section-title" style="margin-bottom:14px">Auto-Generated Insights</div>
     <div class="grid-3" id="autoInsightCards">
-      <div class="card card-accent"><div class="section-title" style="font-size:13px">📊 Top Skills Right Now</div><div id="autoCard1"><div class="skeleton" style="height:120px"></div></div></div>
-      <div class="card card-green"><div class="section-title" style="font-size:13px">🏆 Hiring Leaders</div><div id="autoCard2"><div class="skeleton" style="height:120px"></div></div></div>
-      <div class="card card-purple"><div class="section-title" style="font-size:13px">🌐 Market Summary</div><div id="autoCard3"><div class="skeleton" style="height:120px"></div></div></div>
+      <div class="card card-accent"><div class="section-title" style="font-size:13px"><span class="material-icons mi-sm">bar_chart</span> Top Skills Right Now</div><div id="autoCard1"><div class="skeleton" style="height:120px"></div></div></div>
+      <div class="card card-green"><div class="section-title" style="font-size:13px"><span class="material-icons mi-sm">emoji_events</span> Hiring Leaders</div><div id="autoCard2"><div class="skeleton" style="height:120px"></div></div></div>
+      <div class="card card-purple"><div class="section-title" style="font-size:13px"><span class="material-icons mi-sm">public</span> Market Summary</div><div id="autoCard3"><div class="skeleton" style="height:120px"></div></div></div>
     </div>
   </div>
 </div>
@@ -843,7 +848,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
     <div class="dataset-card">
       <div class="dataset-header">
         <div>
-          <div class="dataset-title">📋 Job Postings</div>
+          <div class="dataset-title"><span class="material-icons mi-sm">article</span> Job Postings</div>
           <div class="dataset-desc">Raw job posting data ingested from 3 sources. Includes title, company, modality, seniority, skills, salary, and description fields.</div>
           <div class="dataset-meta">
             <span class="pill pill-blue" id="dsJobCount">— records</span>
@@ -872,7 +877,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
     <div class="dataset-card">
       <div class="dataset-header">
         <div>
-          <div class="dataset-title">📈 Skill Trends</div>
+          <div class="dataset-title"><span class="material-icons mi-sm">show_chart</span> Skill Trends</div>
           <div class="dataset-desc">Aggregated daily skill demand metrics. Tracks posting share, MoM change, YoY change, and rank per skill across role families.</div>
           <div class="dataset-meta">
             <span class="pill pill-green" id="dsSkillCount">— skills</span>
@@ -899,7 +904,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
     <div class="dataset-card">
       <div class="dataset-header">
         <div>
-          <div class="dataset-title">🏢 Company Signals</div>
+          <div class="dataset-title"><span class="material-icons mi-sm">business</span> Company Signals</div>
           <div class="dataset-desc">Company-level hiring velocity, top roles, skill demand, and activity trends. Updated every 6 hours from posting data.</div>
           <div class="dataset-meta">
             <span class="pill pill-purple" id="dsCompanyCount">— companies</span>
@@ -979,7 +984,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
         <code style="font-size:14px;color:var(--accent);font-family:'Courier New',monospace" id="baseUrlCode"></code>
         <script>document.getElementById('baseUrlCode').textContent = window.location.origin + '/v1'</script>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="copyBaseUrl()">📋 Copy</button>
+      <button class="btn btn-ghost btn-sm" onclick="copyBaseUrl()"><span class="material-icons mi-sm">content_copy</span> Copy</button>
     </div>
 
     <!-- /jobs -->
@@ -1000,7 +1005,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
         </tbody>
       </table>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn btn-ghost btn-xs" onclick="tryEndpoint('jobs', this)">▶ Try it</button>
+        <button class="btn btn-ghost btn-xs" onclick="tryEndpoint('jobs', this)"><span class="material-icons mi-sm">play_arrow</span> Try it</button>
         <span style="font-size:11px;color:var(--text3)">GET /v1/jobs?page_size=3</span>
       </div>
       <div class="code-block" id="resp-jobs"></div>
@@ -1023,7 +1028,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
         </tbody>
       </table>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn btn-ghost btn-xs" onclick="tryEndpoint('skills', this)">▶ Try it</button>
+        <button class="btn btn-ghost btn-xs" onclick="tryEndpoint('skills', this)"><span class="material-icons mi-sm">play_arrow</span> Try it</button>
         <span style="font-size:11px;color:var(--text3)">GET /v1/skills/trends?window=30&limit=5</span>
       </div>
       <div class="code-block" id="resp-skills"></div>
@@ -1044,7 +1049,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
         </tbody>
       </table>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn btn-ghost btn-xs" onclick="tryEndpoint('companies', this)">▶ Try it</button>
+        <button class="btn btn-ghost btn-xs" onclick="tryEndpoint('companies', this)"><span class="material-icons mi-sm">play_arrow</span> Try it</button>
         <span style="font-size:11px;color:var(--text3)">GET /v1/companies?page_size=3</span>
       </div>
       <div class="code-block" id="resp-companies"></div>
@@ -1066,7 +1071,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
         </tbody>
       </table>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn btn-ghost btn-xs" onclick="tryEndpoint('insights', this)">▶ Try it</button>
+        <button class="btn btn-ghost btn-xs" onclick="tryEndpoint('insights', this)"><span class="material-icons mi-sm">play_arrow</span> Try it</button>
         <span style="font-size:11px;color:var(--text3)">GET /v1/insights?q=top+skills&window=30</span>
       </div>
       <div class="code-block" id="resp-insights"></div>
@@ -1109,8 +1114,8 @@ function momBadge(v) {
   if (v == null) return '<span style="color:var(--text3)">—</span>'
   const s = (v * 100).toFixed(1)
   const abs = Math.abs(parseFloat(s))
-  if (v > 0.001) return `<span style="color:var(--green);font-weight:600">▲ ${s}%</span>`
-  if (v < -0.001) return `<span style="color:var(--red);font-weight:600">▼ ${abs}%</span>`
+  if (v > 0.001) return `<span style="color:var(--green);font-weight:600"><span class="material-icons mi-sm" style="color:var(--green)">arrow_upward</span> ${s}%</span>`
+  if (v < -0.001) return `<span style="color:var(--red);font-weight:600"><span class="material-icons mi-sm" style="color:var(--red)">arrow_downward</span> ${abs}%</span>`
   return `<span style="color:var(--text3)">— ${s}%</span>`
 }
 
@@ -1176,7 +1181,7 @@ function toggleSchema(id) {
 
 function copyBaseUrl() {
   navigator.clipboard.writeText(window.location.origin + '/v1')
-  const btn = event.target; btn.textContent = '✓ Copied'; setTimeout(() => { btn.textContent = '📋 Copy' }, 1500)
+  const btn = event.target.closest('button'); btn.innerHTML = '<span class="material-icons mi-sm">check</span> Copied'; setTimeout(() => { btn.innerHTML = '<span class="material-icons mi-sm">content_copy</span> Copy' }, 1500)
 }
 
 function pillColor(tag) {
@@ -1247,14 +1252,14 @@ async function loadKPIs() {
     const histFirst = histPts[0]?.postings || 0
     const histLast  = histPts[histPts.length-1]?.postings || histFirst
     const histTrend = histLast > histFirst ? 'trend-up' : histLast < histFirst ? 'trend-down' : 'trend-flat'
-    const histSymbol = histLast > histFirst ? '▲' : histLast < histFirst ? '▼' : '—'
+    const histSymbol = histLast > histFirst ? '<span class="material-icons mi-sm">arrow_upward</span>' : histLast < histFirst ? '<span class="material-icons mi-sm">arrow_downward</span>' : '—'
     const histPct = histFirst > 0 ? Math.abs(Math.round((histLast - histFirst) / histFirst * 100)) : 0
 
     document.getElementById('kpi-row').innerHTML = `
-      <div class="kpi-card kpi-c1"><span class="kpi-icon">📋</span><div class="kpi-value">${fmt(s.total_postings)}</div><div class="kpi-label">Total Postings</div><div class="kpi-trend ${histTrend}">${histSymbol} ${histPct}% · ${srcCount} sources</div>${buildKpiSparkSVG(histPts,'#4f8ef7')}</div>
-      <div class="kpi-card kpi-c2"><span class="kpi-icon">🛠️</span><div class="kpi-value">${fmt(s.unique_skills)}</div><div class="kpi-label">Unique Skills</div><div class="kpi-trend trend-up">▲ Tracked across all roles</div></div>
-      <div class="kpi-card kpi-c3"><span class="kpi-icon">🏢</span><div class="kpi-value">${fmt(s.companies_hiring)}</div><div class="kpi-label">Companies Hiring</div><div class="kpi-trend trend-flat">${s.top_family ? '🏆 ' + s.top_family : '—'}</div></div>
-      <div class="kpi-card kpi-c4"><span class="kpi-icon">🗂️</span><div class="kpi-value">${s.role_families}</div><div class="kpi-label">Role Families</div><div class="kpi-trend trend-flat">${s.salary_coverage_pct}% salary data${topMod ? ' · '+topMod[0] : ''}</div></div>
+      <div class="kpi-card kpi-c1"><span class="kpi-icon material-icons">article</span><div class="kpi-value">${fmt(s.total_postings)}</div><div class="kpi-label">Total Postings</div><div class="kpi-trend ${histTrend}">${histSymbol} ${histPct}% · ${srcCount} sources</div>${buildKpiSparkSVG(histPts,'#4f8ef7')}</div>
+      <div class="kpi-card kpi-c2"><span class="kpi-icon material-icons">build</span><div class="kpi-value">${fmt(s.unique_skills)}</div><div class="kpi-label">Unique Skills</div><div class="kpi-trend trend-up"><span class="material-icons mi-sm">arrow_upward</span> Tracked across all roles</div></div>
+      <div class="kpi-card kpi-c3"><span class="kpi-icon material-icons">business</span><div class="kpi-value">${fmt(s.companies_hiring)}</div><div class="kpi-label">Companies Hiring</div><div class="kpi-trend trend-flat">${s.top_family ? '<span class="material-icons mi-sm">emoji_events</span> ' + s.top_family : '—'}</div></div>
+      <div class="kpi-card kpi-c4"><span class="kpi-icon material-icons">category</span><div class="kpi-value">${s.role_families}</div><div class="kpi-label">Role Families</div><div class="kpi-trend trend-flat">${s.salary_coverage_pct}% salary data${topMod ? ' · '+topMod[0] : ''}</div></div>
     `
 
     // Update sidebar live badge
@@ -1295,7 +1300,7 @@ async function loadKPIs() {
 
     // Update country pill in topbar
     const pillEl = document.getElementById('overviewCountryPill')
-    if (pillEl) pillEl.innerHTML = selectedCountry ? `<span class="country-active-pill">🌍 ${selectedCountry}</span>` : ''
+    if (pillEl) pillEl.innerHTML = selectedCountry ? `<span class="country-active-pill"><span class="material-icons mi-sm">language</span> ${selectedCountry}</span>` : ''
 
   } catch(e) { console.warn('KPI load failed', e) }
 }
@@ -1334,7 +1339,7 @@ async function loadMarketPulse() {
         const pct = s.momentum ? ((s.momentum - 1) * 100).toFixed(0) : 0
         return `<div class="mover-row">
           <span class="mover-name">${s.skill_name}</span>
-          <span class="mover-badge mover-up">+${pct}% ⬆</span>
+          <span class="mover-badge mover-up">+${pct}% <span class="material-icons mi-sm">trending_up</span></span>
         </div>`
       }).join('')
     }
@@ -1360,7 +1365,7 @@ async function loadMarketPulse() {
         const velColor = vel > 60 ? 'var(--green)' : vel > 30 ? 'var(--amber)' : 'var(--accent)'
         return `<div class="mover-row">
           <span class="mover-name">${c.company_name || '—'}</span>
-          <span style="font-size:11px;color:var(--text3)">${jobs} jobs <span style="color:${velColor};font-weight:700">⚡${vel}</span></span>
+          <span style="font-size:11px;color:var(--text3)">${jobs} jobs <span style="color:${velColor};font-weight:700"><span class="material-icons mi-sm">bolt</span>${vel}</span></span>
         </div>`
       }).join('')
     }
@@ -1773,10 +1778,10 @@ function renderActiveFilterChips() {
   if (family)    chips.push({ label: family,               clear: () => { document.getElementById('jobFamily').value = ''; searchJobs() } })
   if (modality)  chips.push({ label: modality,             clear: () => { document.getElementById('jobModality').value = ''; searchJobs() } })
   if (seniority) chips.push({ label: seniority,            clear: () => { document.getElementById('jobSeniority').value = ''; searchJobs() } })
-  if (country)   chips.push({ label: `📍 ${country}`,     clear: () => { document.getElementById('jobCountry').value = ''; searchJobs() } })
+  if (country)   chips.push({ label: `<span class="material-icons mi-sm">location_on</span> ${country}`,     clear: () => { document.getElementById('jobCountry').value = ''; searchJobs() } })
   if (salaryMin) chips.push({ label: `Min $${salaryMin/1000}k`, clear: () => { document.getElementById('jobSalaryMin').value = ''; searchJobs() } })
   if (salaryMax) chips.push({ label: `Max $${salaryMax/1000}k`, clear: () => { document.getElementById('jobSalaryMax').value = ''; searchJobs() } })
-  if (skills && skills.length) skills.forEach(s => chips.push({ label: `🔧 ${s}`, clear: () => { skillPillsState = skillPillsState.filter(x => x !== s); renderSkillPills(); searchJobs() } }))
+  if (skills && skills.length) skills.forEach(s => chips.push({ label: `<span class="material-icons mi-sm">build</span> ${s}`, clear: () => { skillPillsState = skillPillsState.filter(x => x !== s); renderSkillPills(); searchJobs() } }))
   if (sort && sort !== 'newest') chips.push({ label: `Sort: ${sort.replace('_',' ')}`, clear: () => { document.getElementById('jobSort').value = 'newest'; searchJobs() } })
 
   const el = document.getElementById('activeFilterChips')
@@ -1830,14 +1835,14 @@ async function fetchJobs() {
 
     const listEl = document.getElementById('jobList')
     if (!jobs.length) {
-      listEl.innerHTML = `<div class="empty-state"><span class="emoji">🔍</span><p>No jobs found matching your criteria.<br/>Try adjusting your filters.</p></div>`
+      listEl.innerHTML = `<div class="empty-state"><span class="material-icons mi-lg">search</span><p>No jobs found matching your criteria.<br/>Try adjusting your filters.</p></div>`
     } else {
       listEl.innerHTML = jobs.map(j => renderJobCard(j)).join('')
     }
     renderPagination()
   } catch(e) {
     jobsPage.loading = false
-    document.getElementById('jobList').innerHTML = `<div class="empty-state"><span class="emoji">⚠️</span><p>Could not load jobs.<br/>Check that the API is running.</p></div>`
+    document.getElementById('jobList').innerHTML = `<div class="empty-state"><span class="material-icons mi-lg">warning</span><p>Could not load jobs.<br/>Check that the API is running.</p></div>`
   }
 }
 
@@ -1887,12 +1892,12 @@ function renderJobCard(j) {
   return `<div class="job-card">
     <div class="job-card-left">
       <div class="job-title">${title}</div>
-      <div class="job-company">🏢 ${company}${country ? ` &nbsp;·&nbsp; <span style="font-size:11px;color:var(--text3)">${country}</span>` : ''}</div>
+      <div class="job-company"><span class="material-icons mi-sm">business</span> ${company}${country ? ` &nbsp;·&nbsp; <span style="font-size:11px;color:var(--text3)">${country}</span>` : ''}</div>
       <div class="job-tags">
         ${family   ? `<span class="pill pill-blue">${family}</span>` : ''}
         ${modality ? `<span class="pill ${pillColor(modality)}">${modality}</span>` : ''}
         ${seniority? `<span class="pill ${pillColor(seniority)}">${seniority}</span>` : ''}
-        ${salary   ? `<span class="pill" style="background:rgba(16,185,129,0.15);color:#10b981">💰 ${salary}</span>` : ''}
+        ${salary   ? `<span class="pill" style="background:rgba(16,185,129,0.15);color:#10b981"><span class="material-icons mi-sm">payments</span> ${salary}</span>` : ''}
         ${skills.map(s => `<span class="pill pill-gray">${s}</span>`).join('')}
       </div>
     </div>
@@ -1924,7 +1929,7 @@ async function initCompanies() {
 
     applyCompanyFilters()
   } catch(e) {
-    el.innerHTML = `<div class="empty-state" style="grid-column:span 3"><span class="emoji">⚠️</span><p>Could not load companies.</p></div>`
+    el.innerHTML = `<div class="empty-state" style="grid-column:span 3"><span class="material-icons mi-lg">warning</span><p>Could not load companies.</p></div>`
   }
 }
 
@@ -1954,7 +1959,7 @@ function filterCompanies(q) { applyCompanyFilters() }
 function renderCompanyGrid(companies) {
   const el = document.getElementById('companyGrid')
   if (!companies.length) {
-    el.innerHTML = `<div class="empty-state" style="grid-column:span 3"><span class="emoji">🏢</span><p>No companies found.</p></div>`
+    el.innerHTML = `<div class="empty-state" style="grid-column:span 3"><span class="material-icons mi-lg">business</span><p>No companies found.</p></div>`
     return
   }
   el.innerHTML = companies.map(c => {
@@ -1980,7 +1985,7 @@ function renderCompanyGrid(companies) {
           ${roles.map(r => `<span class="pill pill-purple" style="font-size:10px">${r}</span>`).join('')}
         </div>` : ''}
       <div class="company-skills">${skills.map(s => `<span class="pill pill-blue">${s}</span>`).join('') || '<span style="color:var(--text3);font-size:11px">No skills data yet</span>'}</div>
-      ${vel > 0 ? `<div style="margin-top:10px;font-size:10px;color:${velColor};font-weight:600">⚡ Velocity ${Math.round(vel)}</div>` : ''}
+      ${vel > 0 ? `<div style="margin-top:10px;font-size:10px;color:${velColor};font-weight:600"><span class="material-icons mi-sm">bolt</span> Velocity ${Math.round(vel)}</div>` : ''}
     </div>`
   }).join('')
 }
@@ -2204,7 +2209,7 @@ async function loadAutoCards() {
 async function tryEndpoint(type, btn) {
   const codeEl = document.getElementById('resp-' + type)
   const isOpen = codeEl.classList.contains('open')
-  if (isOpen) { codeEl.classList.remove('open'); btn.textContent = '▶ Try it'; return }
+  if (isOpen) { codeEl.classList.remove('open'); btn.innerHTML = '<span class="material-icons mi-sm">play_arrow</span> Try it'; return }
 
   btn.textContent = '⏳ Loading…'
   const endpoints = {
@@ -2218,11 +2223,11 @@ async function tryEndpoint(type, btn) {
     const data = await apiFetch(endpoints[type])
     codeEl.innerHTML = syntaxHighlightJSON(JSON.stringify(data, null, 2))
     codeEl.classList.add('open')
-    btn.textContent = '▼ Hide'
+    btn.innerHTML = '<span class="material-icons mi-sm">expand_less</span> Hide'
   } catch(e) {
     codeEl.textContent = `Error: ${e.message}\n\nAPI unreachable — check that the server is running and DATABASE_URL is configured.`
     codeEl.classList.add('open')
-    btn.textContent = '▼ Hide'
+    btn.innerHTML = '<span class="material-icons mi-sm">expand_less</span> Hide'
   }
 }
 
@@ -2240,7 +2245,7 @@ function applyTheme(dark) {
   const track = document.getElementById('themeTrack')
   const label = document.getElementById('themeLabel')
   if (track) track.classList.toggle('on', !dark)
-  if (label) label.textContent = dark ? '☀️ Light Mode' : '🌙 Dark Mode'
+  if (label) label.innerHTML = dark ? '<span class="material-icons mi-sm">light_mode</span> Light Mode' : '<span class="material-icons mi-sm">dark_mode</span> Dark Mode'
   // Update Chart.js defaults to match theme
   const textColor    = dark ? '#94a3b8' : '#374151'
   const borderColor  = dark ? '#1e2d45' : '#dce6f1'
@@ -2343,12 +2348,12 @@ async function loadSalaryBenchmark() {
 
   if (!role) {
     document.getElementById('salaryResults').innerHTML =
-      `<div class="salary-empty"><div class="salary-empty-icon">⚠️</div><div style="font-size:14px;font-weight:600;color:var(--text)">Please select a role family</div></div>`
+      `<div class="salary-empty"><div class="salary-empty-icon"><span class="material-icons mi-lg">warning</span></div><div style="font-size:14px;font-weight:600;color:var(--text)">Please select a role family</div></div>`
     return
   }
   if (!seniority) {
     document.getElementById('salaryResults').innerHTML =
-      `<div class="salary-empty"><div class="salary-empty-icon">⚠️</div><div style="font-size:14px;font-weight:600;color:var(--text)">Please select a seniority level</div></div>`
+      `<div class="salary-empty"><div class="salary-empty-icon"><span class="material-icons mi-lg">warning</span></div><div style="font-size:14px;font-weight:600;color:var(--text)">Please select a seniority level</div></div>`
     return
   }
 
@@ -2376,7 +2381,7 @@ async function loadSalaryBenchmark() {
     renderSalaryBenchmark(d, role, seniority, country, window_days)
   } catch(e) {
     document.getElementById('salaryResults').innerHTML =
-      `<div class="salary-empty"><div class="salary-empty-icon">⚠️</div><div style="font-size:14px;color:var(--text)">Failed to load salary data</div></div>`
+      `<div class="salary-empty"><div class="salary-empty-icon"><span class="material-icons mi-lg">warning</span></div><div style="font-size:14px;color:var(--text)">Failed to load salary data</div></div>`
   }
 }
 
