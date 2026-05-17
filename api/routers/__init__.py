@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from .companies import router as companies_router
+from .cron import router as cron_router
 from .insights import router as insights_router
 from .jobs import router as jobs_router
 from .salaries import router as salaries_router
@@ -14,5 +15,6 @@ v1_router.include_router(companies_router)
 v1_router.include_router(salaries_router)
 v1_router.include_router(insights_router)
 v1_router.include_router(stats_router)
+v1_router.include_router(cron_router)
 
 __all__ = ["v1_router"]

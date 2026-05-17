@@ -4,6 +4,7 @@ Database connection layer.
 Uses SQLAlchemy Core with a connection-string abstraction so that
 swapping DATABASE_URL to BigQuery/Snowflake/Neon requires zero code changes.
 """
+
 from __future__ import annotations
 
 import os
@@ -13,6 +14,7 @@ from typing import Generator
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Connection, Engine
+from sqlalchemy.pool import NullPool, QueuePool
 
 load_dotenv()
 
@@ -21,19 +23,31 @@ _DATABASE_URL: str = os.environ.get(
     "postgresql://jobsignals:jobsignals_dev@localhost:5432/jobsignals",
 )
 
+# Vercel sets VERCEL=1; serverless containers can't share a connection pool
+# across invocations, so NullPool (one connection per request) is safer.
+_IS_SERVERLESS = bool(os.environ.get("VERCEL"))
+
 _engine: Engine | None = None
 
 
 def get_engine() -> Engine:
     global _engine
     if _engine is None:
-        _engine = create_engine(
-            _DATABASE_URL,
-            pool_size=5,
-            max_overflow=10,
-            pool_pre_ping=True,   # validates connections before use
-            echo=False,
-        )
+        if _IS_SERVERLESS:
+            _engine = create_engine(
+                _DATABASE_URL,
+                poolclass=NullPool,
+                echo=False,
+            )
+        else:
+            _engine = create_engine(
+                _DATABASE_URL,
+                poolclass=QueuePool,
+                pool_size=5,
+                max_overflow=10,
+                pool_pre_ping=True,
+                echo=False,
+            )
     return _engine
 
 

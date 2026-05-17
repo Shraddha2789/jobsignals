@@ -1,0 +1,15 @@
+# Vercel uses requirements.txt when pyproject.toml is absent.
+# Excluding it avoids the uv/hatchling package-build failure.
+pyproject.toml
+
+# Not needed by the web server
+scripts/
+tests/
+Dockerfile
+docker-compose.yml
+Procfile
+render.yaml
+railway.toml
+Makefile
+logs/
+.venv/

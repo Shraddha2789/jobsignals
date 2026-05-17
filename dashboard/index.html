@@ -2220,7 +2220,7 @@ async function tryEndpoint(type, btn) {
     codeEl.classList.add('open')
     btn.textContent = '▼ Hide'
   } catch(e) {
-    codeEl.textContent = `Error: ${e.message}\n\nMake sure the API is running at http://localhost:8000`
+    codeEl.textContent = `Error: ${e.message}\n\nAPI unreachable — check that the server is running and DATABASE_URL is configured.`
     codeEl.classList.add('open')
     btn.textContent = '▼ Hide'
   }

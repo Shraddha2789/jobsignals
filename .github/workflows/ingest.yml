@@ -1,10 +1,11 @@
 name: Ingest Jobs
 
-# ── Runs every 3 hours + can be triggered manually ────────────────────────────
+# Runs every 6 hours. Ingestion errors are non-fatal (continue-on-error: true)
+# so GitHub never sends a failure email for soft source failures.
 on:
-  # schedule:
-  #   - cron: "0 */3 * * *"   # every 3 hours (00:00, 03:00, 06:00 ... UTC)
-  workflow_dispatch:         # manual trigger from GitHub Actions tab
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
 
 env:
   PYTHON_VERSION: "3.11"
@@ -15,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DATABASE_URL:    ${{ secrets.RENDER_DATABASE_URL }}
+      DATABASE_URL:    ${{ secrets.DATABASE_URL }}
       GROQ_API_KEY:    ${{ secrets.GROQ_API_KEY }}
       ADZUNA_APP_ID:   ${{ secrets.ADZUNA_APP_ID }}
       ADZUNA_APP_KEY:  ${{ secrets.ADZUNA_APP_KEY }}
@@ -34,7 +35,9 @@ jobs:
         run: pip install --quiet -r requirements.txt
 
       - name: Run ingestion
+        continue-on-error: true
         run: python -m scripts.ingest_real
 
-      - name: Run aggregations (refresh dashboard stats)
+      - name: Run aggregations
+        continue-on-error: true
         run: python -c "from pipeline.aggregations import run_all_aggregations; run_all_aggregations()"
