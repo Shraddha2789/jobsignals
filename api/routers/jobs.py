@@ -1,4 +1,5 @@
 """GET /v1/jobs — job search and retrieval."""
+
 from __future__ import annotations
 
 import base64
@@ -72,21 +73,23 @@ def _decode_cursor(cursor: str) -> dict:
 
 @router.get("", response_model=APIResponse[list[JobOut]])
 def list_jobs(
-    q:            Optional[str]  = Query(None, description="Full-text search on title + description"),
-    title_family: Optional[str]  = Query(None),
-    company_id:   Optional[UUID] = Query(None),
-    location:     Optional[str]  = Query(None, description="City free-text search"),
-    country:      Optional[str]  = Query(None, description="Exact 2-letter country code, e.g. US, GB, IN"),
-    modality:     Optional[str]  = Query(None, enum=["remote", "hybrid", "onsite"]),
-    seniority:    Optional[str]  = Query(None),
-    salary_min:   Optional[int]  = Query(None),
-    posted_after: Optional[str]  = Query(None, description="ISO 8601 date"),
-    skills:       Optional[str]  = Query(None, description="Comma-separated skill names"),
-    page_size:    int             = Query(20, ge=1, le=100),
-    offset:       int             = Query(0, ge=0),
-    cursor:       Optional[str]  = Query(None),
-    sort:         Optional[str]  = Query(None, description="newest|oldest|salary_desc|salary_asc"),
-    db:           Connection      = Depends(get_db),
+    q: Optional[str] = Query(None, description="Full-text search on title + description"),
+    title_family: Optional[str] = Query(None),
+    company_id: Optional[UUID] = Query(None),
+    location: Optional[str] = Query(None, description="City free-text search"),
+    country: Optional[str] = Query(
+        None, description="Exact 2-letter country code, e.g. US, GB, IN"
+    ),
+    modality: Optional[str] = Query(None, enum=["remote", "hybrid", "onsite"]),
+    seniority: Optional[str] = Query(None),
+    salary_min: Optional[int] = Query(None),
+    posted_after: Optional[str] = Query(None, description="ISO 8601 date"),
+    skills: Optional[str] = Query(None, description="Comma-separated skill names"),
+    page_size: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    cursor: Optional[str] = Query(None),
+    sort: Optional[str] = Query(None, description="newest|oldest|salary_desc|salary_asc"),
+    db: Connection = Depends(get_db),
 ):
     conditions = ["jp.is_active = TRUE", "jp.source_platform != 'seed'"]
     params: dict = {"page_size": page_size, "offset": offset}
@@ -126,9 +129,7 @@ def list_jobs(
         params["loc"] = f"%{location}%"
 
     if q:
-        conditions.append(
-            "(jp.title_raw ILIKE :q OR jp.description_cleaned ILIKE :q)"
-        )
+        conditions.append("(jp.title_raw ILIKE :q OR jp.description_cleaned ILIKE :q)")
         params["q"] = f"%{q}%"
 
     if cursor:
@@ -138,7 +139,7 @@ def list_jobs(
                 "(jp.posted_at, jp.job_id::text) < (:cursor_posted_at, :cursor_job_id)"
             )
             params["cursor_posted_at"] = cur_data["posted_at"]
-            params["cursor_job_id"]    = cur_data["job_id"]
+            params["cursor_job_id"] = cur_data["job_id"]
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid cursor")
 
@@ -164,9 +165,9 @@ def list_jobs(
     ).scalar()
 
     order_clause = {
-        "oldest":      "jp.posted_at ASC,  jp.job_id ASC",
+        "oldest": "jp.posted_at ASC,  jp.job_id ASC",
         "salary_desc": "jp.salary_min DESC NULLS LAST, jp.posted_at DESC",
-        "salary_asc":  "jp.salary_min ASC  NULLS LAST, jp.posted_at DESC",
+        "salary_asc": "jp.salary_min ASC  NULLS LAST, jp.posted_at DESC",
     }.get(sort or "", "jp.posted_at DESC, jp.job_id DESC")
 
     query = text(
@@ -206,9 +207,10 @@ def list_jobs(
 
 @router.get("/{job_id}", response_model=APIResponse[JobOut])
 def get_job(job_id: UUID, db: Connection = Depends(get_db)):
-    row = db.execute(
-        text(
-            """
+    row = (
+        db.execute(
+            text(
+                """
             SELECT jp.*,
                    c.company_name, c.domain, c.industry, c.company_stage,
                    c.employee_count_range, c.hq_country
@@ -216,9 +218,12 @@ def get_job(job_id: UUID, db: Connection = Depends(get_db)):
             LEFT JOIN companies c ON c.company_id = jp.company_id
             WHERE jp.job_id = :job_id
             """
-        ),
-        {"job_id": str(job_id)},
-    ).mappings().fetchone()
+            ),
+            {"job_id": str(job_id)},
+        )
+        .mappings()
+        .fetchone()
+    )
 
     if not row:
         raise HTTPException(status_code=404, detail="Job not found")

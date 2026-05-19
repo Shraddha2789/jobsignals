@@ -3,6 +3,7 @@ API smoke tests using FastAPI's TestClient.
 These hit the real database — run after `make seed`.
 Skip gracefully if DB is unavailable.
 """
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -14,6 +15,7 @@ def client():
     if not check_connection():
         pytest.skip("Database not available — run `make db-up && make seed` first")
     from api.main import app
+
     return TestClient(app)
 
 
@@ -97,8 +99,7 @@ def test_company_signals(client):
 
 def test_salary_benchmark(client):
     r = client.get(
-        "/v1/salaries/benchmark"
-        "?title_family=Data Engineering&seniority=senior&country=US"
+        "/v1/salaries/benchmark" "?title_family=Data Engineering&seniority=senior&country=US"
     )
     # May return 404 if sample size < 10, that's valid behaviour
     assert r.status_code in (200, 404)
@@ -166,8 +167,9 @@ def test_jobs_country_param(client):
     assert r_de.status_code == 200
     jobs = r_de.json()["data"]
     for job in jobs:
-        assert job.get("location", {}).get("country") == "DE", \
-            f"Expected DE country, got {job.get('location', {}).get('country')}"
+        assert (
+            job.get("location", {}).get("country") == "DE"
+        ), f"Expected DE country, got {job.get('location', {}).get('country')}"
 
     r_in = client.get("/v1/jobs?country=IN&page_size=5")
     assert r_in.status_code == 200

@@ -1,4 +1,5 @@
 """GET /v1/stats — single-call KPI endpoint for the Overview dashboard page."""
+
 from __future__ import annotations
 
 from typing import Any, Optional
@@ -14,16 +15,16 @@ router = APIRouter(prefix="/stats", tags=["Stats"])
 
 
 class StatsOut(BaseModel):
-    total_postings:   int
-    active_postings:  int
-    unique_skills:    int
+    total_postings: int
+    active_postings: int
+    unique_skills: int
     companies_hiring: int
-    role_families:    int
-    last_ingested:    Optional[str]
-    sources:          dict[str, int]
-    top_family:       Optional[str]
+    role_families: int
+    last_ingested: Optional[str]
+    sources: dict[str, int]
+    top_family: Optional[str]
     salary_coverage_pct: float
-    modality_breakdown:  dict[str, int]
+    modality_breakdown: dict[str, int]
 
 
 @router.get("", response_model=StatsOut)
@@ -43,43 +44,51 @@ def get_stats(
             base += f" AND {a}location_country = :country"
         return base
 
-    total = db.execute(
-        text(f"SELECT COUNT(*) FROM job_postings WHERE {w()}"), p
-    ).scalar() or 0
+    total = db.execute(text(f"SELECT COUNT(*) FROM job_postings WHERE {w()}"), p).scalar() or 0
 
-    active = db.execute(
-        text(f"SELECT COUNT(*) FROM job_postings WHERE is_active = TRUE AND {w()}"), p
-    ).scalar() or 0
+    active = (
+        db.execute(
+            text(f"SELECT COUNT(*) FROM job_postings WHERE is_active = TRUE AND {w()}"), p
+        ).scalar()
+        or 0
+    )
 
-    unique_skills = db.execute(
-        text(
-            f"SELECT COUNT(DISTINCT skill_name) "
-            f"FROM job_skills js "
-            f"JOIN job_postings jp ON jp.job_id = js.job_id "
-            f"WHERE {w('jp')}"
-        ),
-        p,
-    ).scalar() or 0
+    unique_skills = (
+        db.execute(
+            text(
+                f"SELECT COUNT(DISTINCT skill_name) "
+                f"FROM job_skills js "
+                f"JOIN job_postings jp ON jp.job_id = js.job_id "
+                f"WHERE {w('jp')}"
+            ),
+            p,
+        ).scalar()
+        or 0
+    )
 
-    companies = db.execute(
-        text(
-            f"SELECT COUNT(DISTINCT company_id) FROM job_postings "
-            f"WHERE is_active = TRUE AND {w()} AND company_id IS NOT NULL"
-        ),
-        p,
-    ).scalar() or 0
+    companies = (
+        db.execute(
+            text(
+                f"SELECT COUNT(DISTINCT company_id) FROM job_postings "
+                f"WHERE is_active = TRUE AND {w()} AND company_id IS NOT NULL"
+            ),
+            p,
+        ).scalar()
+        or 0
+    )
 
-    families = db.execute(
-        text(
-            f"SELECT COUNT(DISTINCT title_family) FROM job_postings "
-            f"WHERE {w()} AND title_family IS NOT NULL AND title_family != 'Other'"
-        ),
-        p,
-    ).scalar() or 0
+    families = (
+        db.execute(
+            text(
+                f"SELECT COUNT(DISTINCT title_family) FROM job_postings "
+                f"WHERE {w()} AND title_family IS NOT NULL AND title_family != 'Other'"
+            ),
+            p,
+        ).scalar()
+        or 0
+    )
 
-    last_row = db.execute(
-        text(f"SELECT MAX(posted_at) FROM job_postings WHERE {w()}"), p
-    ).scalar()
+    last_row = db.execute(text(f"SELECT MAX(posted_at) FROM job_postings WHERE {w()}"), p).scalar()
     last_ingested = last_row.isoformat() if last_row else None
 
     source_rows = db.execute(
@@ -101,10 +110,13 @@ def get_stats(
     ).fetchone()
     top_family = top_family_row[0] if top_family_row else None
 
-    salary_row = db.execute(
-        text(f"SELECT COUNT(*) FROM job_postings WHERE {w()} AND salary_min IS NOT NULL"),
-        p,
-    ).scalar() or 0
+    salary_row = (
+        db.execute(
+            text(f"SELECT COUNT(*) FROM job_postings WHERE {w()} AND salary_min IS NOT NULL"),
+            p,
+        ).scalar()
+        or 0
+    )
     salary_pct = round(salary_row / total * 100, 1) if total > 0 else 0.0
 
     modality_rows = db.execute(
@@ -137,9 +149,9 @@ def get_stats(
 
 @router.get("/history")
 def stats_history(
-    days:    int            = Query(90, ge=7, le=365, description="Lookback window in days"),
+    days: int = Query(90, ge=7, le=365, description="Lookback window in days"),
     country: Optional[str] = Query(None, description="2-letter country code"),
-    db:      Connection     = Depends(get_db),
+    db: Connection = Depends(get_db),
 ) -> dict[str, Any]:
     """Weekly posting counts for KPI sparklines. Returns up to ~13 weekly buckets."""
     c = country.upper() if country else None

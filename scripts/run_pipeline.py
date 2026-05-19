@@ -2,6 +2,7 @@
 CLI script: run the ingestion + aggregation pipeline once.
 Run: python -m scripts.run_pipeline
 """
+
 import sys
 import os
 

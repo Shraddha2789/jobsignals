@@ -8,6 +8,7 @@ Runs:
 Graduate to Airflow/Prefect in Phase 2 by replacing this with proper DAGs.
 Run: python -m scripts.scheduler
 """
+
 import logging
 import os
 import sys
@@ -31,15 +32,17 @@ logging.basicConfig(
 log = logging.getLogger("scheduler")
 console = Console()
 
-INGESTION_INTERVAL  = int(os.environ.get("INGESTION_INTERVAL_SECONDS",  21600))   # 6h
-AGGREGATION_INTERVAL = int(os.environ.get("AGGREGATION_INTERVAL_SECONDS", 86400)) # 24h
+INGESTION_INTERVAL = int(os.environ.get("INGESTION_INTERVAL_SECONDS", 21600))  # 6h
+AGGREGATION_INTERVAL = int(os.environ.get("AGGREGATION_INTERVAL_SECONDS", 86400))  # 24h
 
 
 def _run_ingestion():
     log.info("▶ Scheduled ingestion starting (all sources)...")
     try:
         stats = run_all_sources()
-        log.info(f"✓ Ingestion done — {stats['inserted']} inserted, {stats['skipped']} skipped, {stats['skills']} skills")
+        log.info(
+            f"✓ Ingestion done — {stats['inserted']} inserted, {stats['skipped']} skipped, {stats['skills']} skills"
+        )
     except Exception as e:
         log.error(f"✗ Ingestion failed: {e}", exc_info=True)
 

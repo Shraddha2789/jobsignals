@@ -3,6 +3,7 @@ CLI script: fetch real job postings from all sources and run them through the pi
 Sources: RemoteOK + Remotive + Arbeitnow
 Run: python -m scripts.ingest_real
 """
+
 import sys
 import os
 

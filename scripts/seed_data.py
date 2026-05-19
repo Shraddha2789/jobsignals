@@ -2,6 +2,7 @@
 CLI script: seed the database with development data.
 Run: python -m scripts.seed_data
 """
+
 import sys
 import os
 
@@ -39,5 +40,6 @@ def main(n: int = 400):
 
 if __name__ == "__main__":
     import sys
+
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 400
     main(n)

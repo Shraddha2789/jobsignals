@@ -4,6 +4,7 @@ Arbeitnow adapter — fetches job postings from arbeitnow.com's public API.
 Returns ~300 jobs per run (3 pages × 100). Mix of remote + onsite,
 global locations, diverse roles (tech and non-tech). No auth required.
 """
+
 from __future__ import annotations
 
 import re
@@ -31,8 +32,14 @@ DEFAULT_PAGES = 3
 
 def _strip_html(html: str) -> str:
     text = re.sub(r"<[^>]+>", " ", html)
-    for entity, char in [("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"),
-                          ("&nbsp;", " "), ("&#39;", "'"), ("&quot;", '"')]:
+    for entity, char in [
+        ("&amp;", "&"),
+        ("&lt;", "<"),
+        ("&gt;", ">"),
+        ("&nbsp;", " "),
+        ("&#39;", "'"),
+        ("&quot;", '"'),
+    ]:
         text = text.replace(entity, char)
     return re.sub(r"\s+", " ", text).strip()
 
@@ -62,53 +69,130 @@ def _infer_country(location: str) -> str:
     loc = location.lower()
     country_hints = {
         # Germany — major cities + common suffixes
-        "germany": "DE", "deutschland": "DE",
-        "berlin": "DE", "munich": "DE", "münchen": "DE", "hamburg": "DE",
-        "cologne": "DE", "köln": "DE", "koln": "DE",
-        "frankfurt": "DE", "düsseldorf": "DE", "dusseldorf": "DE",
-        "stuttgart": "DE", "dortmund": "DE", "essen": "DE", "bremen": "DE",
-        "leipzig": "DE", "hannover": "DE", "hanover": "DE",
-        "nuremberg": "DE", "nürnberg": "DE", "nurnberg": "DE",
-        "bonn": "DE", "mannheim": "DE", "wiesbaden": "DE",
-        "bielefeld": "DE", "münster": "DE", "munster": "DE",
-        "aachen": "DE", "chemnitz": "DE", "kiel": "DE",
-        "magdeburg": "DE", "rostock": "DE", "erfurt": "DE",
-        "mainz": "DE", "lübeck": "DE", "lubeck": "DE",
-        "heidelberg": "DE", "darmstadt": "DE", "regensburg": "DE",
-        "ingolstadt": "DE", "würzburg": "DE", "wurzburg": "DE",
-        "ulm": "DE", "wolfsburg": "DE", "heilbronn": "DE",
-        "potsdam": "DE", "dresden": "DE", "freiburg": "DE",
-        "augsburg": "DE", "karlsruhe": "DE", "kaiserslautern": "DE",
-        "saarbrücken": "DE", "saarbrucken": "DE", "trier": "DE",
-        "aschersleben": "DE", "aschaffenburg": "DE",
-        "am main": "DE", "im breisgau": "DE", "an der ruhr": "DE",
+        "germany": "DE",
+        "deutschland": "DE",
+        "berlin": "DE",
+        "munich": "DE",
+        "münchen": "DE",
+        "hamburg": "DE",
+        "cologne": "DE",
+        "köln": "DE",
+        "koln": "DE",
+        "frankfurt": "DE",
+        "düsseldorf": "DE",
+        "dusseldorf": "DE",
+        "stuttgart": "DE",
+        "dortmund": "DE",
+        "essen": "DE",
+        "bremen": "DE",
+        "leipzig": "DE",
+        "hannover": "DE",
+        "hanover": "DE",
+        "nuremberg": "DE",
+        "nürnberg": "DE",
+        "nurnberg": "DE",
+        "bonn": "DE",
+        "mannheim": "DE",
+        "wiesbaden": "DE",
+        "bielefeld": "DE",
+        "münster": "DE",
+        "munster": "DE",
+        "aachen": "DE",
+        "chemnitz": "DE",
+        "kiel": "DE",
+        "magdeburg": "DE",
+        "rostock": "DE",
+        "erfurt": "DE",
+        "mainz": "DE",
+        "lübeck": "DE",
+        "lubeck": "DE",
+        "heidelberg": "DE",
+        "darmstadt": "DE",
+        "regensburg": "DE",
+        "ingolstadt": "DE",
+        "würzburg": "DE",
+        "wurzburg": "DE",
+        "ulm": "DE",
+        "wolfsburg": "DE",
+        "heilbronn": "DE",
+        "potsdam": "DE",
+        "dresden": "DE",
+        "freiburg": "DE",
+        "augsburg": "DE",
+        "karlsruhe": "DE",
+        "kaiserslautern": "DE",
+        "saarbrücken": "DE",
+        "saarbrucken": "DE",
+        "trier": "DE",
+        "aschersleben": "DE",
+        "aschaffenburg": "DE",
+        "am main": "DE",
+        "im breisgau": "DE",
+        "an der ruhr": "DE",
         # UK
-        "uk": "GB", "united kingdom": "GB", "england": "GB",
-        "london": "GB", "manchester": "GB", "birmingham": "GB",
-        "leeds": "GB", "glasgow": "GB", "edinburgh": "GB",
-        "liverpool": "GB", "bristol": "GB", "sheffield": "GB",
+        "uk": "GB",
+        "united kingdom": "GB",
+        "england": "GB",
+        "london": "GB",
+        "manchester": "GB",
+        "birmingham": "GB",
+        "leeds": "GB",
+        "glasgow": "GB",
+        "edinburgh": "GB",
+        "liverpool": "GB",
+        "bristol": "GB",
+        "sheffield": "GB",
         # Netherlands
-        "netherlands": "NL", "holland": "NL",
-        "amsterdam": "NL", "rotterdam": "NL", "the hague": "NL", "utrecht": "NL",
+        "netherlands": "NL",
+        "holland": "NL",
+        "amsterdam": "NL",
+        "rotterdam": "NL",
+        "the hague": "NL",
+        "utrecht": "NL",
         # France
-        "france": "FR", "paris": "FR", "lyon": "FR", "marseille": "FR",
+        "france": "FR",
+        "paris": "FR",
+        "lyon": "FR",
+        "marseille": "FR",
         # Canada
-        "canada": "CA", "toronto": "CA", "vancouver": "CA",
-        "montreal": "CA", "calgary": "CA", "ottawa": "CA",
+        "canada": "CA",
+        "toronto": "CA",
+        "vancouver": "CA",
+        "montreal": "CA",
+        "calgary": "CA",
+        "ottawa": "CA",
         # Australia
-        "australia": "AU", "sydney": "AU", "melbourne": "AU",
-        "brisbane": "AU", "perth": "AU", "adelaide": "AU",
+        "australia": "AU",
+        "sydney": "AU",
+        "melbourne": "AU",
+        "brisbane": "AU",
+        "perth": "AU",
+        "adelaide": "AU",
         # India
-        "india": "IN", "bangalore": "IN", "bengaluru": "IN",
-        "mumbai": "IN", "delhi": "IN", "hyderabad": "IN", "pune": "IN",
-        "chennai": "IN", "kolkata": "IN",
+        "india": "IN",
+        "bangalore": "IN",
+        "bengaluru": "IN",
+        "mumbai": "IN",
+        "delhi": "IN",
+        "hyderabad": "IN",
+        "pune": "IN",
+        "chennai": "IN",
+        "kolkata": "IN",
         # Singapore / Philippines
         "singapore": "SG",
-        "philippines": "PH", "manila": "PH", "metro manila": "PH",
+        "philippines": "PH",
+        "manila": "PH",
+        "metro manila": "PH",
         # US — explicit only, don't default "remote" to US
-        "united states": "US", "usa": "US", "new york": "US",
-        "san francisco": "US", "los angeles": "US", "chicago": "US",
-        "seattle": "US", "boston": "US", "austin": "US",
+        "united states": "US",
+        "usa": "US",
+        "new york": "US",
+        "san francisco": "US",
+        "los angeles": "US",
+        "chicago": "US",
+        "seattle": "US",
+        "boston": "US",
+        "austin": "US",
     }
     for hint, code in country_hints.items():
         if hint in loc:
@@ -129,9 +213,7 @@ class ArbeitnowAdapter(BaseAdapter):
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     def _fetch_page(self, page: int) -> list[dict]:
-        response = httpx.get(
-            API_URL, headers=HEADERS, params={"page": page}, timeout=20
-        )
+        response = httpx.get(API_URL, headers=HEADERS, params={"page": page}, timeout=20)
         response.raise_for_status()
         return response.json().get("data", [])
 
@@ -156,14 +238,16 @@ class ArbeitnowAdapter(BaseAdapter):
                 if not description_raw:
                     continue
 
-                remote   = bool(job.get("remote"))
+                remote = bool(job.get("remote"))
                 location = job.get("location") or ""
                 loc_raw, city, modality = _parse_location(location, remote)
-                country  = _infer_country(location)
+                country = _infer_country(location)
 
                 # job_types is a list like ["Full-time"] or []
-                job_types = [t.lower().replace("-", "_").replace(" ", "_")
-                             for t in (job.get("job_types") or [])]
+                job_types = [
+                    t.lower().replace("-", "_").replace(" ", "_")
+                    for t in (job.get("job_types") or [])
+                ]
                 emp_type = "full_time"
                 for jt in job_types:
                     if "part" in jt:
@@ -174,24 +258,24 @@ class ArbeitnowAdapter(BaseAdapter):
                         emp_type = "internship"
 
                 yield RawJobPosting(
-                    source_id        = job["slug"],
-                    source_platform  = "arbeitnow",
-                    source_url       = job.get("url"),
-                    title_raw        = job["title"],
-                    company_name     = (job.get("company_name") or "Unknown").strip(),
-                    company_domain   = None,
-                    location_raw     = loc_raw,
-                    location_city    = city,
-                    location_country = country,
-                    work_modality    = modality,
-                    employment_type  = emp_type,
-                    seniority_level  = None,
-                    description_raw  = description_raw,
-                    salary_min       = None,
-                    salary_max       = None,
-                    salary_currency  = "USD",
-                    salary_source    = None,
-                    posted_at        = _parse_date(job.get("created_at")),
+                    source_id=job["slug"],
+                    source_platform="arbeitnow",
+                    source_url=job.get("url"),
+                    title_raw=job["title"],
+                    company_name=(job.get("company_name") or "Unknown").strip(),
+                    company_domain=None,
+                    location_raw=loc_raw,
+                    location_city=city,
+                    location_country=country,
+                    work_modality=modality,
+                    employment_type=emp_type,
+                    seniority_level=None,
+                    description_raw=description_raw,
+                    salary_min=None,
+                    salary_max=None,
+                    salary_currency="USD",
+                    salary_source=None,
+                    posted_at=_parse_date(job.get("created_at")),
                 )
                 yielded += 1
 

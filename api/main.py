@@ -1,4 +1,5 @@
 """FastAPI application entry point."""
+
 from __future__ import annotations
 
 import os
@@ -54,7 +55,6 @@ def health():
         "database": "connected" if db_ok else "unreachable",
         "version": "1.0.0",
     }
-
 
 
 def start():

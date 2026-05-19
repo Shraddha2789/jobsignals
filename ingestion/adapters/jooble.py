@@ -10,6 +10,7 @@ Set in .env:
 
 Jooble returns up to 20 jobs per page. We paginate across multiple keywords.
 """
+
 from __future__ import annotations
 
 import json
@@ -47,15 +48,26 @@ QUERY_MATRIX = [
 ]
 
 COUNTRY_CURRENCY = {
-    "IN": "INR", "GB": "GBP", "CA": "CAD", "AU": "AUD",
-    "SG": "SGD", "US": "USD", "DE": "EUR",
+    "IN": "INR",
+    "GB": "GBP",
+    "CA": "CAD",
+    "AU": "AUD",
+    "SG": "SGD",
+    "US": "USD",
+    "DE": "EUR",
 }
 
 
 def _strip_html(text: str) -> str:
     text = re.sub(r"<[^>]+>", " ", text)
-    for entity, char in [("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"),
-                          ("&nbsp;", " "), ("&#39;", "'"), ("&quot;", '"')]:
+    for entity, char in [
+        ("&amp;", "&"),
+        ("&lt;", "<"),
+        ("&gt;", ">"),
+        ("&nbsp;", " "),
+        ("&#39;", "'"),
+        ("&quot;", '"'),
+    ]:
         text = text.replace(entity, char)
     return re.sub(r"\s+", " ", text).strip()
 
@@ -130,7 +142,9 @@ class JoobleAdapter(BaseAdapter):
                 try:
                     jobs = self._fetch_page(keyword, country_name, page)
                 except Exception as e:
-                    console.print(f"  [red]✗ Jooble '{keyword}/{country_name}' page {page} failed: {e}[/]")
+                    console.print(
+                        f"  [red]✗ Jooble '{keyword}/{country_name}' page {page} failed: {e}[/]"
+                    )
                     break
 
                 total_raw += len(jobs)
@@ -158,24 +172,24 @@ class JoobleAdapter(BaseAdapter):
                     sal_min, sal_max = _parse_salary(job.get("salary"))
 
                     yield RawJobPosting(
-                        source_id        = job_id,
-                        source_platform  = "jooble",
-                        source_url       = job.get("link"),
-                        title_raw        = title,
-                        company_name     = company,
-                        company_domain   = None,
-                        location_raw     = location_raw,
-                        location_city    = city,
-                        location_country = iso2,
-                        work_modality    = _infer_modality(title, desc_raw),
-                        employment_type  = "full_time",
-                        seniority_level  = None,
-                        description_raw  = desc_raw,
-                        salary_min       = sal_min,
-                        salary_max       = sal_max,
-                        salary_currency  = COUNTRY_CURRENCY.get(iso2, "USD"),
-                        salary_source    = "posted" if sal_min else None,
-                        posted_at        = datetime.now(tz=timezone.utc),
+                        source_id=job_id,
+                        source_platform="jooble",
+                        source_url=job.get("link"),
+                        title_raw=title,
+                        company_name=company,
+                        company_domain=None,
+                        location_raw=location_raw,
+                        location_city=city,
+                        location_country=iso2,
+                        work_modality=_infer_modality(title, desc_raw),
+                        employment_type="full_time",
+                        seniority_level=None,
+                        description_raw=desc_raw,
+                        salary_min=sal_min,
+                        salary_max=sal_max,
+                        salary_currency=COUNTRY_CURRENCY.get(iso2, "USD"),
+                        salary_source="posted" if sal_min else None,
+                        posted_at=datetime.now(tz=timezone.utc),
                     )
                     yielded += 1
 

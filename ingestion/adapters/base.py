@@ -1,4 +1,5 @@
 """Abstract base class for all source adapters."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

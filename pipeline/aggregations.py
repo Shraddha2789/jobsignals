@@ -2,6 +2,7 @@
 Aggregation pipeline — computes skill_trends and company_signals.
 Runs after every ingestion cycle. Designed to be idempotent (UPSERT).
 """
+
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -17,6 +18,7 @@ WINDOWS = [7, 30, 90, 365]
 
 
 # ── Skill Trends ──────────────────────────────────────────────────────────────
+
 
 def compute_skill_trends(reference_date: date | None = None) -> int:
     """
@@ -86,13 +88,13 @@ def compute_skill_trends(reference_date: date | None = None) -> int:
                         """
                     ),
                     {
-                        "skill":   skill_name,
-                        "family":  title_family,
+                        "skill": skill_name,
+                        "family": title_family,
                         "country": country,
-                        "period":  reference_date,
-                        "window":  window,
-                        "count":   count,
-                        "share":   share,
+                        "period": reference_date,
+                        "window": window,
+                        "count": count,
+                        "share": share,
                     },
                 )
                 rows_written += 1
@@ -144,6 +146,7 @@ def compute_skill_trends(reference_date: date | None = None) -> int:
 
 
 # ── Company Signals ───────────────────────────────────────────────────────────
+
 
 def compute_company_signals(reference_date: date | None = None) -> int:
     """
@@ -224,6 +227,7 @@ def compute_company_signals(reference_date: date | None = None) -> int:
                 top_roles = [r[0] for r in top_roles_rows]
 
                 import json
+
                 conn.execute(
                     text(
                         """
@@ -247,16 +251,16 @@ def compute_company_signals(reference_date: date | None = None) -> int:
                         """
                     ),
                     {
-                        "cid":      company_id,
-                        "period":   reference_date,
-                        "window":   window,
-                        "total":    total,
-                        "active":   active,
+                        "cid": company_id,
+                        "period": reference_date,
+                        "window": window,
+                        "total": total,
+                        "active": active,
                         "velocity": velocity,
-                        "skills":   json.dumps(top_skills),
-                        "roles":    json.dumps(top_roles),
-                        "med_min":  int(med_min) if med_min else None,
-                        "med_max":  int(med_max) if med_max else None,
+                        "skills": json.dumps(top_skills),
+                        "roles": json.dumps(top_roles),
+                        "med_min": int(med_min) if med_min else None,
+                        "med_max": int(med_max) if med_max else None,
                     },
                 )
                 rows_written += 1
@@ -266,7 +270,7 @@ def compute_company_signals(reference_date: date | None = None) -> int:
 
 def run_all_aggregations() -> dict[str, int]:
     console.print("[bold cyan]▶ Running aggregations...[/]")
-    trend_rows  = compute_skill_trends()
+    trend_rows = compute_skill_trends()
     signal_rows = compute_company_signals()
     console.print(f"  [green]✓[/] skill_trends: {trend_rows} rows upserted")
     console.print(f"  [green]✓[/] company_signals: {signal_rows} rows upserted")

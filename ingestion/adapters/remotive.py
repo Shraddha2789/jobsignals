@@ -5,6 +5,7 @@ Fetches per-category across all known categories to overcome the 22-job free-tie
 cap on the undifferentiated endpoint. Each category call returns up to ~150 jobs.
 No auth required. HTML descriptions included.
 """
+
 from __future__ import annotations
 
 import re
@@ -46,18 +47,24 @@ CATEGORIES = [
 
 # Remotive job_type → our employment_type enum
 JOB_TYPE_MAP = {
-    "full_time":  "full_time",
-    "part_time":  "part_time",
-    "contract":   "contract",
+    "full_time": "full_time",
+    "part_time": "part_time",
+    "contract": "contract",
     "internship": "internship",
-    "freelance":  "contract",
+    "freelance": "contract",
 }
 
 
 def _strip_html(html: str) -> str:
     text = re.sub(r"<[^>]+>", " ", html)
-    for entity, char in [("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"),
-                          ("&nbsp;", " "), ("&#39;", "'"), ("&quot;", '"')]:
+    for entity, char in [
+        ("&amp;", "&"),
+        ("&lt;", "<"),
+        ("&gt;", ">"),
+        ("&nbsp;", " "),
+        ("&#39;", "'"),
+        ("&quot;", '"'),
+    ]:
         text = text.replace(entity, char)
     return re.sub(r"\s+", " ", text).strip()
 
@@ -89,16 +96,32 @@ def _parse_date(date_str: str) -> datetime | None:
 
 
 _COUNTRY_HINTS: dict[str, str] = {
-    "india": "IN", "bangalore": "IN", "mumbai": "IN", "delhi": "IN", "hyderabad": "IN",
-    "united kingdom": "GB", "uk": "GB", "london": "GB",
-    "germany": "DE", "berlin": "DE", "munich": "DE",
-    "canada": "CA", "toronto": "CA", "vancouver": "CA",
-    "australia": "AU", "sydney": "AU", "melbourne": "AU",
+    "india": "IN",
+    "bangalore": "IN",
+    "mumbai": "IN",
+    "delhi": "IN",
+    "hyderabad": "IN",
+    "united kingdom": "GB",
+    "uk": "GB",
+    "london": "GB",
+    "germany": "DE",
+    "berlin": "DE",
+    "munich": "DE",
+    "canada": "CA",
+    "toronto": "CA",
+    "vancouver": "CA",
+    "australia": "AU",
+    "sydney": "AU",
+    "melbourne": "AU",
     "singapore": "SG",
-    "france": "FR", "paris": "FR",
-    "netherlands": "NL", "amsterdam": "NL",
-    "brazil": "BR", "são paulo": "BR",
+    "france": "FR",
+    "paris": "FR",
+    "netherlands": "NL",
+    "amsterdam": "NL",
+    "brazil": "BR",
+    "são paulo": "BR",
 }
+
 
 def _infer_country_remotive(location: str) -> str:
     if not location:
@@ -123,14 +146,14 @@ class RemotiveAdapter(BaseAdapter):
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     def _fetch_category(self, slug: str) -> list[dict]:
-        response = httpx.get(
-            API_URL, headers=HEADERS, params={"category": slug}, timeout=20
-        )
+        response = httpx.get(API_URL, headers=HEADERS, params={"category": slug}, timeout=20)
         response.raise_for_status()
         return response.json().get("jobs", [])
 
     def fetch(self) -> Iterator[RawJobPosting]:
-        console.print(f"  [dim]Fetching from Remotive API ({len(self.categories)} categories)...[/]")
+        console.print(
+            f"  [dim]Fetching from Remotive API ({len(self.categories)} categories)...[/]"
+        )
         seen_ids: set[str] = set()
         total_raw = 0
         yielded = 0
@@ -156,31 +179,31 @@ class RemotiveAdapter(BaseAdapter):
 
                 sal_min, sal_max = _parse_salary(job.get("salary"))
                 loc_raw = job.get("candidate_required_location") or "Remote"
-                emp_type = JOB_TYPE_MAP.get(
-                    (job.get("job_type") or "").lower(), "full_time"
-                )
+                emp_type = JOB_TYPE_MAP.get((job.get("job_type") or "").lower(), "full_time")
 
                 yield RawJobPosting(
-                    source_id        = job_id_str,
-                    source_platform  = "remotive",
-                    source_url       = job.get("url"),
-                    title_raw        = job["title"],
-                    company_name     = (job.get("company_name") or "Unknown").strip(),
-                    company_domain   = None,
-                    location_raw     = loc_raw,
-                    location_city    = "Remote",
-                    location_country = _infer_country_remotive(loc_raw),
-                    work_modality    = "remote",
-                    employment_type  = emp_type,
-                    seniority_level  = None,
-                    description_raw  = description_raw,
-                    salary_min       = sal_min,
-                    salary_max       = sal_max,
-                    salary_currency  = "USD",
-                    salary_source    = "posted" if sal_min else None,
-                    posted_at        = _parse_date(job.get("publication_date", "")),
+                    source_id=job_id_str,
+                    source_platform="remotive",
+                    source_url=job.get("url"),
+                    title_raw=job["title"],
+                    company_name=(job.get("company_name") or "Unknown").strip(),
+                    company_domain=None,
+                    location_raw=loc_raw,
+                    location_city="Remote",
+                    location_country=_infer_country_remotive(loc_raw),
+                    work_modality="remote",
+                    employment_type=emp_type,
+                    seniority_level=None,
+                    description_raw=description_raw,
+                    salary_min=sal_min,
+                    salary_max=sal_max,
+                    salary_currency="USD",
+                    salary_source="posted" if sal_min else None,
+                    posted_at=_parse_date(job.get("publication_date", "")),
                 )
                 yielded += 1
 
-        console.print(f"  [dim]Received {total_raw} raw jobs from Remotive ({len(seen_ids)} unique)[/]")
+        console.print(
+            f"  [dim]Received {total_raw} raw jobs from Remotive ({len(seen_ids)} unique)[/]"
+        )
         console.print(f"  [green]✓[/] {yielded} Remotive jobs yielded")
