@@ -371,7 +371,7 @@ class ApifyIndeedAdapter(_ApifyBaseAdapter):
     """
 
     source_platform = "indeed"
-    ACTOR_ID = "misceres/indeed-scraper"
+    ACTOR_ID = "misceres~indeed-scraper"
 
     def __init__(
         self,
