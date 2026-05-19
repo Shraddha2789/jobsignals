@@ -78,6 +78,9 @@ jobs:
         env:
           DATABASE_URL: postgresql://jobsignals:jobsignals_test@localhost:5432/jobsignals_test
 
+      - name: Seed test data
+        run: python -m scripts.seed_data 50
+
       - name: Run tests
         run: pytest tests/ -v --tb=short
 
