@@ -1,11 +1,9 @@
 name: Ingest Jobs
 
-# Runs every 6 hours. Ingestion errors are non-fatal (continue-on-error: true)
-# so GitHub never sends a failure email for soft source failures.
+# Ingestion runs locally via macOS cron (make cron-install).
+# This workflow is disabled — no API keys needed on GitHub.
 on:
-  schedule:
-    - cron: "0 */6 * * *"
-  workflow_dispatch:
+  workflow_dispatch:  # manual trigger only, if ever needed
 
 env:
   PYTHON_VERSION: "3.11"
@@ -14,14 +12,16 @@ jobs:
   ingest:
     name: Fetch live job postings
     runs-on: ubuntu-latest
+    if: false  # disabled — run locally with: make ingest
 
     env:
-      DATABASE_URL:    ${{ secrets.DATABASE_URL }}
-      GROQ_API_KEY:    ${{ secrets.GROQ_API_KEY }}
-      ADZUNA_APP_ID:   ${{ secrets.ADZUNA_APP_ID }}
-      ADZUNA_APP_KEY:  ${{ secrets.ADZUNA_APP_KEY }}
-      JOOBLE_API_KEY:  ${{ secrets.JOOBLE_API_KEY }}
-      SERPAPI_KEY:     ${{ secrets.SERPAPI_KEY }}
+      DATABASE_URL:     ${{ secrets.DATABASE_URL }}
+      GROQ_API_KEY:     ${{ secrets.GROQ_API_KEY }}
+      ADZUNA_APP_ID:    ${{ secrets.ADZUNA_APP_ID }}
+      ADZUNA_APP_KEY:   ${{ secrets.ADZUNA_APP_KEY }}
+      JOOBLE_API_KEY:   ${{ secrets.JOOBLE_API_KEY }}
+      SERPAPI_KEY:      ${{ secrets.SERPAPI_KEY }}
+      APIFY_API_TOKEN:  ${{ secrets.APIFY_API_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4

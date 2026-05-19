@@ -15,6 +15,7 @@ from sqlalchemy import text
 
 from db import get_connection
 from ingestion.adapters.adzuna import AdzunaAdapter
+from ingestion.adapters.apify import ApifyIndeedAdapter, ApifyLinkedInAdapter
 from ingestion.adapters.jooble import JoobleAdapter
 from ingestion.adapters.arbeitnow import ArbeitnowAdapter
 from ingestion.adapters.base import BaseAdapter
@@ -329,6 +330,9 @@ def run_all_sources() -> dict[str, int]:
         (JoobleAdapter(), "Jooble"),
         # ── Google Jobs via SerpAPI — rotates daily (100 free/month) ─────────
         (SerpAPIAdapter(), "Google Jobs (SerpAPI)"),
+        # ── Apify — LinkedIn + Indeed scrapers (API key required) ─────────────
+        (ApifyLinkedInAdapter(), "LinkedIn (Apify)"),
+        (ApifyIndeedAdapter(), "Indeed (Apify)"),
     ]
 
     for adapter, name in sources:

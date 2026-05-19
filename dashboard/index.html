@@ -2370,7 +2370,7 @@ async function loadSalaryBenchmark() {
       const err = await resp.json().catch(() => ({}))
       const msg = err.detail || `No salary data found for ${role} / ${seniority} in ${country}`
       document.getElementById('salaryResults').innerHTML =
-        `<div class="salary-empty"><div class="salary-empty-icon">📭</div>
+        `<div class="salary-empty"><div class="salary-empty-icon"><span class="material-icons mi-lg">inbox</span></div>
          <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px">Not enough data</div>
          <div style="font-size:13px">${msg}</div>
          <div style="font-size:12px;color:var(--text3);margin-top:8px">Try a different role, level, or country — or increase the time window.</div></div>`
