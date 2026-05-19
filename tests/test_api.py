@@ -81,14 +81,16 @@ def test_skill_taxonomy(client):
 def test_list_companies(client):
     r = client.get("/v1/companies?page_size=5")
     assert r.status_code == 200
-    assert len(r.json()["data"]) > 0
+    body = r.json()
+    assert "data" in body
+    assert isinstance(body["data"], list)
 
 
 def test_company_signals(client):
-    # Get first available company
+    # Requires companies with real (non-seed) job postings — skip if none
     companies = client.get("/v1/companies?page_size=1").json()["data"]
     if not companies:
-        pytest.skip("No companies in DB")
+        pytest.skip("No non-seed companies in DB")
     cid = companies[0]["company_id"]
     r = client.get(f"/v1/companies/{cid}/signals?window=90")
     assert r.status_code == 200
