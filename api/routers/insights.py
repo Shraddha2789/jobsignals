@@ -213,7 +213,7 @@ def _tool_skill_trends(db: Connection, args: dict, context_country: Optional[str
                 f"""
                 SELECT skill_name, posting_count, posting_share, mom_change
                 FROM skill_trends
-                WHERE {' AND '.join(base_conds)}
+                WHERE {" AND ".join(base_conds)}
                 ORDER BY posting_share DESC NULLS LAST
                 LIMIT :limit
                 """
@@ -229,7 +229,7 @@ def _tool_skill_trends(db: Connection, args: dict, context_country: Optional[str
                 WITH totals AS (
                     SELECT COUNT(*) AS n FROM job_postings
                     WHERE is_active = TRUE AND source_platform != 'seed'
-                    {'AND location_country = :country' if country else ''}
+                    {"AND location_country = :country" if country else ""}
                 )
                 SELECT st.skill_name,
                        SUM(st.posting_count)                          AS posting_count,

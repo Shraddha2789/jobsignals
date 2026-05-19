@@ -27,7 +27,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install ruff
-        run: pip install --quiet ruff
+        run: pip install --quiet "ruff==0.4.9"
 
       - name: Check code style
         run: ruff check .

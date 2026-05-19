@@ -101,7 +101,7 @@ class HimalayasAdapter(BaseAdapter):
             try:
                 data = self._fetch_page(offset)
             except Exception as e:
-                console.print(f"  [red]✗ Himalayas page {page+1} failed: {e}[/]")
+                console.print(f"  [red]✗ Himalayas page {page + 1} failed: {e}[/]")
                 break
 
             jobs = data.get("jobs", [])

@@ -135,7 +135,7 @@ class SerpAPIAdapter(BaseAdapter):
                     continue
 
                 # Build a stable source_id from title + company + location
-                raw_id = f"{job.get('title','')}{job.get('company_name','')}{location}"
+                raw_id = f"{job.get('title', '')}{job.get('company_name', '')}{location}"
                 source_id = "serp_" + hashlib.md5(raw_id.encode()).hexdigest()[:12]
 
                 apply_link = ""

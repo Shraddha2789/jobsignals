@@ -99,7 +99,7 @@ def test_company_signals(client):
 
 def test_salary_benchmark(client):
     r = client.get(
-        "/v1/salaries/benchmark" "?title_family=Data Engineering&seniority=senior&country=US"
+        "/v1/salaries/benchmark?title_family=Data Engineering&seniority=senior&country=US"
     )
     # May return 404 if sample size < 10, that's valid behaviour
     assert r.status_code in (200, 404)
