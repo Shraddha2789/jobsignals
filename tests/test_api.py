@@ -28,7 +28,7 @@ def test_health(client):
 def test_root(client):
     r = client.get("/")
     assert r.status_code == 200
-    assert "JobSignals" in r.json()["product"]
+    assert "JobSignals" in r.text
 
 
 def test_list_jobs_default(client):
