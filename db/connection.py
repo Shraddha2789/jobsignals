@@ -40,12 +40,27 @@ def get_engine() -> Engine:
                 echo=False,
             )
         else:
+            # TCP keepalives prevent remote hosts (e.g. Neon) from dropping
+            # long-running batch connections due to idle timeout.
+            _is_remote = "localhost" not in _DATABASE_URL and "127.0.0.1" not in _DATABASE_URL
+            connect_args = (
+                {
+                    "keepalives": 1,
+                    "keepalives_idle": 30,
+                    "keepalives_interval": 10,
+                    "keepalives_count": 5,
+                }
+                if _is_remote
+                else {}
+            )
             _engine = create_engine(
                 _DATABASE_URL,
                 poolclass=QueuePool,
                 pool_size=5,
                 max_overflow=10,
                 pool_pre_ping=True,
+                pool_recycle=300,
+                connect_args=connect_args,
                 echo=False,
             )
     return _engine
