@@ -34,14 +34,16 @@ app.include_router(v1_router)
 
 @app.on_event("startup")
 def init_db_schema():
-    """Apply schema on startup. Safe to run repeatedly — uses CREATE TABLE IF NOT EXISTS."""
+    """Apply schema on startup — skipped on Vercel (schema managed externally)."""
+    if os.environ.get("VERCEL"):
+        return
     schema_path = Path(__file__).parent.parent / "db" / "schema.sql"
     if schema_path.exists():
         try:
             with get_connection() as conn:
                 conn.execute(text(schema_path.read_text()))
         except Exception:
-            pass  # DB not yet reachable (e.g. missing env var on cold deploy)
+            pass
 
 
 @app.get("/", include_in_schema=False)
