@@ -14,15 +14,15 @@
   "crons": [
     {
       "path": "/v1/cron/ingest/free",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/v1/cron/ingest/paid",
-      "schedule": "30 */6 * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/v1/cron/ingest/scrape",
-      "schedule": "0 2,8,14,20 * * *"
+      "schedule": "0 10 * * *"
     },
     {
       "path": "/v1/cron/aggregate",
