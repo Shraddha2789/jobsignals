@@ -31,7 +31,7 @@ def _verify(authorization: str | None) -> None:
 
 @router.get("/ingest")
 def cron_ingest(authorization: str | None = Header(default=None)):
-    """Run all source adapters. Called by Vercel Cron every 6 hours."""
+    """Run all source adapters (dev/local use). For Vercel use the /ingest/* split endpoints."""
     _verify(authorization)
     try:
         from pipeline.runner import run_all_sources
@@ -40,7 +40,48 @@ def cron_ingest(authorization: str | None = Header(default=None)):
         return {"status": "ok", **stats}
     except Exception as exc:
         log.error("Ingestion failed: %s", exc, exc_info=True)
-        # Return 200 so Vercel does not send a failure email — error is in body.
+        return {"status": "error", "detail": str(exc)}
+
+
+@router.get("/ingest/free")
+def cron_ingest_free(authorization: str | None = Header(default=None)):
+    """Free sources: RemoteOK, Remotive, Arbeitnow, Himalayas, Jobicy, TheMuse, WeWorkRemotely."""
+    _verify(authorization)
+    try:
+        from pipeline.runner import run_free_sources
+
+        stats = run_free_sources()
+        return {"status": "ok", **stats}
+    except Exception as exc:
+        log.error("Ingestion/free failed: %s", exc, exc_info=True)
+        return {"status": "error", "detail": str(exc)}
+
+
+@router.get("/ingest/paid")
+def cron_ingest_paid(authorization: str | None = Header(default=None)):
+    """Paid API sources: Adzuna (6 countries) + Jooble."""
+    _verify(authorization)
+    try:
+        from pipeline.runner import run_paid_sources
+
+        stats = run_paid_sources()
+        return {"status": "ok", **stats}
+    except Exception as exc:
+        log.error("Ingestion/paid failed: %s", exc, exc_info=True)
+        return {"status": "error", "detail": str(exc)}
+
+
+@router.get("/ingest/scrape")
+def cron_ingest_scrape(authorization: str | None = Header(default=None)):
+    """Scraper sources: SerpAPI (Google Jobs) + Apify LinkedIn + Apify Indeed."""
+    _verify(authorization)
+    try:
+        from pipeline.runner import run_scrape_sources
+
+        stats = run_scrape_sources()
+        return {"status": "ok", **stats}
+    except Exception as exc:
+        log.error("Ingestion/scrape failed: %s", exc, exc_info=True)
         return {"status": "error", "detail": str(exc)}
 
 

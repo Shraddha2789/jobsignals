@@ -355,6 +355,73 @@ def run_all_sources() -> dict[str, int]:
     return total_stats
 
 
+def _run_sources(sources: list, label: str) -> dict[str, int]:
+    """Run a named list of (adapter, name) pairs and return aggregated stats."""
+    console.print(f"[bold cyan]▶ JobSignals — {label}[/]")
+    company_map = _ensure_companies()
+
+    total_stats = {"processed": 0, "inserted": 0, "skipped": 0, "skills": 0}
+    for adapter, name in sources:
+        stats = {"processed": 0, "inserted": 0, "skipped": 0, "skills": 0}
+        _run_adapter(adapter, company_map, stats, f"{name} postings")
+        console.print(
+            f"  [green]✓[/] {name}: {stats['inserted']} inserted, "
+            f"{stats['skipped']} skipped, {stats['skills']} skills\n"
+        )
+        for k in total_stats:
+            total_stats[k] += stats[k]
+
+    console.print(
+        f"[bold green]✓ {label} done:[/] "
+        f"{total_stats['inserted']} inserted, {total_stats['skipped']} skipped"
+    )
+    return total_stats
+
+
+def run_free_sources() -> dict[str, int]:
+    """Run free, no-auth sources: RemoteOK, Remotive, Arbeitnow, Himalayas, Jobicy, TheMuse, WeWorkRemotely."""
+    return _run_sources(
+        [
+            (RemoteOKAdapter(), "RemoteOK"),
+            (RemotiveAdapter(), "Remotive"),
+            (ArbeitnowAdapter(), "Arbeitnow"),
+            (HimalayasAdapter(), "Himalayas"),
+            (JobicyAdapter(), "Jobicy"),
+            (TheMuseAdapter(), "The Muse"),
+            (WeWorkRemotelyAdapter(), "We Work Remotely"),
+        ],
+        "free sources",
+    )
+
+
+def run_paid_sources() -> dict[str, int]:
+    """Run API-key sources: Adzuna (6 countries) + Jooble."""
+    return _run_sources(
+        [
+            (AdzunaAdapter(country="us"), "Adzuna US"),
+            (AdzunaAdapter(country="gb"), "Adzuna GB"),
+            (AdzunaAdapter(country="in"), "Adzuna IN"),
+            (AdzunaAdapter(country="au"), "Adzuna AU"),
+            (AdzunaAdapter(country="de"), "Adzuna DE"),
+            (AdzunaAdapter(country="ca"), "Adzuna CA"),
+            (JoobleAdapter(), "Jooble"),
+        ],
+        "paid sources",
+    )
+
+
+def run_scrape_sources() -> dict[str, int]:
+    """Run scraper sources: SerpAPI (Google Jobs) + Apify LinkedIn + Apify Indeed."""
+    return _run_sources(
+        [
+            (SerpAPIAdapter(), "Google Jobs (SerpAPI)"),
+            (ApifyLinkedInAdapter(), "LinkedIn (Apify)"),
+            (ApifyIndeedAdapter(), "Indeed (Apify)"),
+        ],
+        "scrape sources",
+    )
+
+
 def run_remoteok_ingestion(min_relevance_tags: int = 0) -> dict[str, int]:
     """Fetch real job postings from RemoteOK and run them through the full pipeline."""
     console.print("[bold cyan]▶ JobSignals — RemoteOK live ingestion[/]")

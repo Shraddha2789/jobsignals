@@ -13,8 +13,16 @@
   ],
   "crons": [
     {
-      "path": "/v1/cron/ingest",
+      "path": "/v1/cron/ingest/free",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/v1/cron/ingest/paid",
+      "schedule": "30 */6 * * *"
+    },
+    {
+      "path": "/v1/cron/ingest/scrape",
+      "schedule": "0 2,8,14,20 * * *"
     },
     {
       "path": "/v1/cron/aggregate",
