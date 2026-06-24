@@ -34,16 +34,8 @@ RESULTS_PER_PAGE = 50
 # Search terms to get diverse results across families
 SEARCH_QUERIES = [
     "software engineer",
-    "data engineer",
     "data scientist",
     "product manager",
-    "machine learning",
-    "marketing manager",
-    "finance analyst",
-    "operations manager",
-    "sales manager",
-    "hr manager",
-    "ux designer",
     "devops engineer",
 ]
 
