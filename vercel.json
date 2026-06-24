@@ -10,5 +10,15 @@
       "src": "/(.*)",
       "dest": "app.py"
     }
+  ],
+  "crons": [
+    {
+      "path": "/cron/ingest",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/cron/aggregate",
+      "schedule": "0 3 * * *"
+    }
   ]
 }
