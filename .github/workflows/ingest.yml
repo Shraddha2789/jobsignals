@@ -1,9 +1,9 @@
 name: Ingest Jobs
 
-# Ingestion runs locally via macOS cron (make cron-install).
-# This workflow is disabled — no API keys needed on GitHub.
 on:
-  workflow_dispatch:  # manual trigger only, if ever needed
+  schedule:
+    - cron: "0 7 * * *"   # daily at 7am UTC
+  workflow_dispatch:        # manual trigger from GitHub Actions tab
 
 env:
   PYTHON_VERSION: "3.11"
@@ -12,7 +12,6 @@ jobs:
   ingest:
     name: Fetch live job postings
     runs-on: ubuntu-latest
-    if: false  # disabled — run locally with: make ingest
 
     env:
       DATABASE_URL:     ${{ secrets.DATABASE_URL }}

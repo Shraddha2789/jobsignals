@@ -61,17 +61,14 @@ def cron_ingest_free(authorization: str | None = Header(default=None)):
 def cron_ingest_paid(authorization: str | None = Header(default=None)):
     """Paid API sources: Adzuna (6 countries) + Jooble."""
     _verify(authorization)
-    import os
-
-    adzuna_configured = bool(os.environ.get("ADZUNA_APP_ID") and os.environ.get("ADZUNA_APP_KEY"))
     try:
         from pipeline.runner import run_paid_sources
 
         stats = run_paid_sources()
-        return {"status": "ok", "adzuna_configured": adzuna_configured, **stats}
+        return {"status": "ok", **stats}
     except Exception as exc:
         log.error("Ingestion/paid failed: %s", exc, exc_info=True)
-        return {"status": "error", "adzuna_configured": adzuna_configured, "detail": str(exc)}
+        return {"status": "error", "detail": str(exc)}
 
 
 @router.get("/ingest/scrape")
