@@ -13,11 +13,11 @@
   ],
   "crons": [
     {
-      "path": "/cron/ingest",
+      "path": "/v1/cron/ingest",
       "schedule": "0 */6 * * *"
     },
     {
-      "path": "/cron/aggregate",
+      "path": "/v1/cron/aggregate",
       "schedule": "0 3 * * *"
     }
   ]
