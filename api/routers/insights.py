@@ -707,6 +707,7 @@ def _run_agentic_insight(
             messages=messages,
             tools=TOOLS,
             tool_choice="auto",
+            reasoning_effort="low",  # gpt-oss burns TPM budget on reasoning tokens otherwise
         )
         msg = response.choices[0].message
 
@@ -766,6 +767,7 @@ def _run_agentic_insight(
         model=model,
         max_tokens=2048,
         messages=messages,
+        reasoning_effort="low",
     )
     return final.choices[0].message.content or "Analysis complete.", list(sources_used)
 

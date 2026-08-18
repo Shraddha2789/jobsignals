@@ -2156,7 +2156,12 @@ async function runAiQuery() {
       meta.innerHTML = `<div class="insight-meta"><span class="model-badge">${model||'LLM'}</span>${sources.length?`<span style="color:var(--text3)">${sources.length} sources</span>`:''}</div>`
     }
   } catch(e) {
-    box.innerHTML = `<div style="color:var(--red);font-size:13px;padding:10px">Failed to get analysis. Make sure the API is running.</div>`
+    const msg = /429/.test(e.message)
+      ? 'Groq rate limit reached — the free-tier key allows limited tokens/minute. Wait ~30s and try again.'
+      : /504/.test(e.message)
+      ? 'The AI took too long to respond. Try a simpler or more specific question.'
+      : 'Failed to get analysis. Make sure the API is running.'
+    box.innerHTML = `<div style="color:var(--red);font-size:13px;padding:10px">${msg}</div>`
   }
 }
 
