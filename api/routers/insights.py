@@ -19,8 +19,14 @@ from pipeline.normalization.skill_extractor import SKILLS_TAXONOMY
 router = APIRouter(prefix="/insights", tags=["Insights"])
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-DEFAULT_MODEL = "llama-3.1-8b-instant"
-MAX_TOOL_ROUNDS = 3  # max agentic loop iterations before forcing a final answer
+DEFAULT_MODEL = (
+    "openai/gpt-oss-20b"  # llama-3.1-8b-instant was retired by Groq (404 model_not_found)
+)
+MAX_TOOL_ROUNDS = 2  # max agentic loop iterations before forcing a final answer
+GROQ_TIMEOUT = (
+    15.0  # seconds per Groq call — fail fast instead of hanging on the SDK's default 600s
+)
+GROQ_MAX_RETRIES = 0  # keep worst-case (rounds × timeout) bounded and predictable
 
 CACHE_TTL = 600  # 10 minutes
 
@@ -618,7 +624,12 @@ def _get_client() -> OpenAI:
             status_code=503,
             detail="GROQ_API_KEY not configured. Set it in your .env file.",
         )
-    return OpenAI(api_key=api_key, base_url=GROQ_BASE_URL)
+    return OpenAI(
+        api_key=api_key,
+        base_url=GROQ_BASE_URL,
+        timeout=GROQ_TIMEOUT,
+        max_retries=GROQ_MAX_RETRIES,
+    )
 
 
 # ── System prompt ──────────────────────────────────────────────────────────────
@@ -789,6 +800,11 @@ def _run_insight(
             raise HTTPException(status_code=503, detail="Invalid GROQ_API_KEY.")
         if "RateLimitError" in cls or "429" in str(e):
             raise HTTPException(status_code=429, detail="Rate limit reached. Try again shortly.")
+        if "Timeout" in cls or "timed out" in str(e).lower():
+            raise HTTPException(
+                status_code=504,
+                detail="The AI analysis took too long to respond. Try a simpler or more specific question.",
+            )
         raise HTTPException(status_code=502, detail=f"LLM API error: {e}")
 
     result = APIResponse(
