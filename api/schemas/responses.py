@@ -144,6 +144,13 @@ class InsightRequest(BaseModel):
     title_family: Optional[str] = Field(None, description="Scope analysis to a role family")
     country: Optional[str] = Field("US", description="ISO 2-letter country code")
     window: Optional[int] = Field(90, description="Look-back window in days", ge=7, le=365)
+    brief: Optional[bool] = Field(
+        False,
+        description=(
+            "Return a short plain-prose answer (a couple sentences, no headers/lists/"
+            "tables) instead of a full structured analysis — for compact UI widgets."
+        ),
+    )
 
 
 class InsightOut(BaseModel):
