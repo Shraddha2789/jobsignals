@@ -58,6 +58,9 @@ def health():
     return {
         "status": "ok" if db_ok else "degraded",
         "database": "connected" if db_ok else "unreachable",
+        # Informational only — doesn't affect "status". A missing key only breaks
+        # /v1/insights, not the rest of the API, so it shouldn't flip overall health.
+        "groq_configured": bool(os.environ.get("GROQ_API_KEY")),
         "version": "1.0.0",
     }
 
