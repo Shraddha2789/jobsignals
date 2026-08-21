@@ -8,7 +8,13 @@ import time
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from openai import OpenAI
+from openai import (
+    APITimeoutError,
+    AuthenticationError,
+    NotFoundError,
+    OpenAI,
+    RateLimitError,
+)
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
@@ -22,11 +28,18 @@ GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 DEFAULT_MODEL = (
     "openai/gpt-oss-20b"  # llama-3.1-8b-instant was retired by Groq (404 model_not_found)
 )
+# Used automatically if DEFAULT_MODEL is ever retired/renamed again — Groq has done this
+# more than once, and each time it silently broke insights until someone noticed and shipped
+# a hotfix. Falling back keeps the endpoint alive while that gets sorted out.
+FALLBACK_MODEL = "openai/gpt-oss-120b"  # same family/API as DEFAULT_MODEL, just a larger tier
 MAX_TOOL_ROUNDS = 2  # max agentic loop iterations before forcing a final answer
 GROQ_TIMEOUT = (
     15.0  # seconds per Groq call — fail fast instead of hanging on the SDK's default 600s
 )
-GROQ_MAX_RETRIES = 0  # keep worst-case (rounds × timeout) bounded and predictable
+GROQ_MAX_RETRIES = 0  # SDK-level retries off; we do one bounded, targeted retry ourselves below
+RATE_LIMIT_RETRY_DELAY = (
+    2.0  # seconds — single short backoff on 429, keeps worst-case latency bounded
+)
 
 CACHE_TTL = 600  # 10 minutes
 
@@ -668,6 +681,29 @@ seniority distribution, top hiring companies, salary benchmarks (US/GB/CA/AU)
 """
 
 
+# ── Resilient chat completion ──────────────────────────────────────────────────
+
+
+def _chat_completion(client: OpenAI, model: str, **kwargs):
+    """Call Groq with one bounded, targeted retry so transient/Groq-side failures
+    don't take the whole endpoint down (this has happened repeatedly: a retired
+    model, a tripped rate limit — each time needing a manual code fix).
+
+    - NotFoundError (model retired/renamed) → retry once on FALLBACK_MODEL.
+    - RateLimitError (429) → wait briefly once, retry same model.
+    Returns (response, model_actually_used) so callers can report which model answered.
+    """
+    try:
+        return client.chat.completions.create(model=model, **kwargs), model
+    except NotFoundError:
+        if model == FALLBACK_MODEL:
+            raise
+        return client.chat.completions.create(model=FALLBACK_MODEL, **kwargs), FALLBACK_MODEL
+    except RateLimitError:
+        time.sleep(RATE_LIMIT_RETRY_DELAY)
+        return client.chat.completions.create(model=model, **kwargs), model
+
+
 # ── Agentic runner ─────────────────────────────────────────────────────────────
 
 
@@ -679,7 +715,7 @@ def _run_agentic_insight(
     db: Connection,
     client: OpenAI,
     model: str,
-) -> tuple[str, list[str]]:
+) -> tuple[str, list[str], str]:
     """
     Agentic tool-calling loop.
     The LLM decides which tools to call and in what order.
@@ -700,9 +736,11 @@ def _run_agentic_insight(
     ]
     sources_used: set[str] = set()
 
+    active_model = model
     for _round in range(MAX_TOOL_ROUNDS):
-        response = client.chat.completions.create(
-            model=model,
+        response, active_model = _chat_completion(
+            client,
+            active_model,
             max_tokens=1200,
             messages=messages,
             tools=TOOLS,
@@ -713,7 +751,7 @@ def _run_agentic_insight(
 
         # No tool calls → LLM produced its final answer
         if not msg.tool_calls:
-            return msg.content or "No analysis returned.", list(sources_used)
+            return msg.content or "No analysis returned.", list(sources_used), active_model
 
         # Append the assistant turn (with tool call requests)
         messages.append(
@@ -763,13 +801,18 @@ def _run_agentic_insight(
             ),
         }
     )
-    final = client.chat.completions.create(
-        model=model,
+    final, active_model = _chat_completion(
+        client,
+        active_model,
         max_tokens=2048,
         messages=messages,
         reasoning_effort="low",
     )
-    return final.choices[0].message.content or "Analysis complete.", list(sources_used)
+    return (
+        final.choices[0].message.content or "Analysis complete.",
+        list(sources_used),
+        active_model,
+    )
 
 
 # ── Shared entry point ─────────────────────────────────────────────────────────
@@ -791,26 +834,27 @@ def _run_insight(
     model = os.environ.get("INSIGHTS_MODEL", DEFAULT_MODEL)
 
     try:
-        analysis, sources = _run_agentic_insight(
+        analysis, sources, used_model = _run_agentic_insight(
             question, title_family, context_country, window, db, client, model
         )
     except HTTPException:
         raise
+    except AuthenticationError:
+        raise HTTPException(status_code=503, detail="Invalid GROQ_API_KEY.")
+    except RateLimitError:
+        # Already retried once inside _chat_completion — this means it's still rate
+        # limited after backing off, so surface it rather than retrying further.
+        raise HTTPException(status_code=429, detail="Rate limit reached. Try again shortly.")
+    except APITimeoutError:
+        raise HTTPException(
+            status_code=504,
+            detail="The AI analysis took too long to respond. Try a simpler or more specific question.",
+        )
     except Exception as e:
-        cls = type(e).__name__
-        if "AuthenticationError" in cls or "401" in str(e):
-            raise HTTPException(status_code=503, detail="Invalid GROQ_API_KEY.")
-        if "RateLimitError" in cls or "429" in str(e):
-            raise HTTPException(status_code=429, detail="Rate limit reached. Try again shortly.")
-        if "Timeout" in cls or "timed out" in str(e).lower():
-            raise HTTPException(
-                status_code=504,
-                detail="The AI analysis took too long to respond. Try a simpler or more specific question.",
-            )
         raise HTTPException(status_code=502, detail=f"LLM API error: {e}")
 
     result = APIResponse(
-        data=InsightOut(question=question, analysis=analysis, sources=sources, model=model)
+        data=InsightOut(question=question, analysis=analysis, sources=sources, model=used_model)
     )
     _insight_cache[_cache_key] = (time.time(), result)
     return result
