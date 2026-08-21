@@ -114,7 +114,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 
 /* ── Grid helpers ── */
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;align-items:start}
 .mb16{margin-bottom:16px}
 .mb20{margin-bottom:20px}
 
@@ -149,6 +149,10 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 .insight-card{background:linear-gradient(135deg,rgba(79,142,247,0.08),rgba(139,92,246,0.06));border:1px solid var(--border2);border-radius:12px;padding:20px}
 .insight-text{font-size:13px;color:var(--text2);line-height:1.7}
 .insight-text strong{color:var(--text)}
+/* Market Summary card: capped so a longer-than-expected AI response scrolls
+   inside the card instead of stretching the whole 3-column row. */
+.market-summary-text{font-size:12px;color:var(--text2);line-height:1.6;max-height:150px;overflow-y:auto}
+.market-summary-text strong{color:var(--text)}
 .insight-meta{font-size:11px;color:var(--text3);margin-top:12px;display:flex;align-items:center;gap:8px}
 .model-badge{background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-size:10px;color:var(--text3);font-weight:600}
 
@@ -2206,14 +2210,16 @@ async function loadAutoCards() {
   } catch(e) { document.getElementById('autoCard2').innerHTML = '<div style="color:var(--text3);font-size:12px">Unavailable</div>' }
 
   // Card 3: Market summary (with country context)
+  // brief=true asks the backend for a couple plain-prose sentences instead of the
+  // full 350-700 word structured analysis — this card is a compact teaser, not a report.
   try {
     const scope = selectedCountry ? ` in the ${selectedCountry} market` : ' globally'
-    let card3Url = `/insights?q=${encodeURIComponent('Give a concise 3-4 sentence summary of the current tech job market' + scope + '. Include top role family and modality trend.')}&window=30`
+    let card3Url = `/insights?q=${encodeURIComponent('Give a concise 2-3 sentence summary of the current tech job market' + scope + '. Include top role family and modality trend.')}&window=30&brief=true`
     if (selectedCountry) card3Url += `&country=${encodeURIComponent(selectedCountry)}`
     const d = await apiFetch(card3Url)
     const analysis = d.data?.analysis || d.analysis || ''
     document.getElementById('autoCard3').innerHTML = analysis
-      ? `<div style="font-size:12px;color:var(--text2);line-height:1.6">${renderMarkdown(analysis)}</div>`
+      ? `<div class="market-summary-text">${renderMarkdown(analysis)}</div>`
       : '<div style="color:var(--text3);font-size:12px;padding:4px 0">Market summary unavailable — rate limit or API error. Try again shortly.</div>'
   } catch(e) { document.getElementById('autoCard3').innerHTML = '<div style="color:var(--text3);font-size:12px;padding:4px 0">Market summary unavailable — rate limit or API error. Try again shortly.</div>' }
 }

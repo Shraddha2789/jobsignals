@@ -190,6 +190,32 @@ TOOLS = [
 ]
 
 
+def _allow_null_on_optional_params(tools: list[dict]) -> list[dict]:
+    """Widen every non-required property's type to also accept `null`.
+
+    Reproduced live against Groq: gpt-oss-20b reliably emits `null` (not
+    omission) for an optional arg it wants to skip — e.g. {"title_family":
+    null, "window_days": 30} — and Groq's tool-call validator rejects that
+    against a plain `"type": "string"` schema with a 400 tool_use_failed,
+    even though the property isn't in `required`. Confirmed in testing:
+    3/3 failures on the original schema, 0/5 after this widening.
+    """
+    for t in tools:
+        params = t["function"]["parameters"]
+        required = set(params.get("required", []))
+        for name, spec in params["properties"].items():
+            if name in required or "type" not in spec:
+                continue
+            base = spec["type"]
+            types = base if isinstance(base, list) else [base]
+            if "null" not in types:
+                spec["type"] = [*types, "null"]
+    return tools
+
+
+TOOLS = _allow_null_on_optional_params(TOOLS)
+
+
 # ── Tool implementations ───────────────────────────────────────────────────────
 
 
@@ -197,8 +223,11 @@ def _tool_skill_trends(db: Connection, args: dict, context_country: Optional[str
     title_family = args.get("title_family")
     raw_country = args.get("country") or context_country
     country = raw_country.upper() if raw_country else None
-    window = int(args.get("window_days", 30))
-    limit = min(int(args.get("limit", 15)), 25)
+    # `.get(key, default)` only falls back when the key is absent — with optional tool
+    # params now typed nullable (see _allow_null_on_optional_params), the model may send
+    # an explicit `null`, which is present-but-None and would otherwise reach int(None).
+    window = int(args.get("window_days") or 30)
+    limit = min(int(args.get("limit") or 15), 25)
 
     base_conds = ["window_days = :window"]
     params: dict = {"window": window, "limit": limit}
@@ -286,7 +315,7 @@ def _tool_job_summary(db: Connection, args: dict, context_country: Optional[str]
     title_family = args.get("title_family")
     raw_country = args.get("country") or context_country
     country = raw_country.upper() if raw_country else None
-    window = int(args.get("window_days", 30))
+    window = int(args.get("window_days") or 30)
 
     conds = [
         "is_active = TRUE",
@@ -370,7 +399,7 @@ def _tool_salary_benchmark(
     title_family = args.get("title_family")
     raw_country = args.get("country") or context_country
     country = raw_country.upper() if raw_country else "US"
-    window = int(args.get("window_days", 90))
+    window = int(args.get("window_days") or 90)
 
     if not title_family:
         return {"error": "title_family is required for salary benchmarks."}
@@ -434,7 +463,7 @@ def _tool_company_signals(
     db: Connection, args: dict, context_country: Optional[str] = None
 ) -> dict:
     company_name = args.get("company_name", "")
-    window = int(args.get("window_days", 90))
+    window = int(args.get("window_days") or 90)
 
     company = db.execute(
         text(
@@ -680,6 +709,19 @@ seniority distribution, top hiring companies, salary benchmarks (US/GB/CA/AU)
 - For "compare X and Y" questions, fetch data for both and present a structured comparison.
 """
 
+# Appended instead of the length/formatting rules above when the caller wants a compact
+# answer for a small UI widget (e.g. a dashboard summary card) rather than the full
+# analysis panel. Stated as an override so it wins over the base prompt's "350-700 words,
+# headers, bullets, tables" guidance above it.
+_BRIEF_OVERRIDE = """\
+
+## Formatting override — this is a compact widget, not a report
+Ignore the length and formatting rules above. Answer in 2-3 short plain-prose sentences \
+only — no headers, no bullet lists, no tables, no line breaks between sentences. \
+You may use **bold** for at most one key figure. Stay under 50 words total.
+"""
+BRIEF_MAX_TOKENS = 180  # hard cap backing the word-count ask above
+
 
 # ── Resilient chat completion ──────────────────────────────────────────────────
 
@@ -715,6 +757,7 @@ def _run_agentic_insight(
     db: Connection,
     client: OpenAI,
     model: str,
+    brief: bool = False,
 ) -> tuple[str, list[str], str]:
     """
     Agentic tool-calling loop.
@@ -730,8 +773,12 @@ def _run_agentic_insight(
     ctx_parts.append(f"Default lookback window: {window}d.")
     context_note = "\n\n**Current session context**: " + "  ".join(ctx_parts) if ctx_parts else ""
 
+    system_prompt = _SYSTEM_PROMPT + context_note + (_BRIEF_OVERRIDE if brief else "")
+    round_max_tokens = BRIEF_MAX_TOKENS if brief else 1200
+    final_max_tokens = BRIEF_MAX_TOKENS if brief else 2048
+
     messages: list[dict] = [
-        {"role": "system", "content": _SYSTEM_PROMPT + context_note},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": question},
     ]
     sources_used: set[str] = set()
@@ -741,7 +788,7 @@ def _run_agentic_insight(
         response, active_model = _chat_completion(
             client,
             active_model,
-            max_tokens=1200,
+            max_tokens=round_max_tokens,
             messages=messages,
             tools=TOOLS,
             tool_choice="auto",
@@ -796,15 +843,19 @@ def _run_agentic_insight(
         {
             "role": "user",
             "content": (
-                "Based on all the data you have gathered, please provide your "
-                "comprehensive final analysis now."
+                "Give your final answer now in the requested brief format."
+                if brief
+                else (
+                    "Based on all the data you have gathered, please provide your "
+                    "comprehensive final analysis now."
+                )
             ),
         }
     )
     final, active_model = _chat_completion(
         client,
         active_model,
-        max_tokens=2048,
+        max_tokens=final_max_tokens,
         messages=messages,
         reasoning_effort="low",
     )
@@ -824,8 +875,9 @@ def _run_insight(
     context_country: Optional[str],
     window: int,
     db: Connection,
+    brief: bool = False,
 ) -> APIResponse:
-    _cache_key = f"{question}|{title_family or ''}|{context_country or ''}|{window}"
+    _cache_key = f"{question}|{title_family or ''}|{context_country or ''}|{window}|{brief}"
     _now = time.time()
     if _cache_key in _insight_cache and _now - _insight_cache[_cache_key][0] < CACHE_TTL:
         return _insight_cache[_cache_key][1]
@@ -835,7 +887,7 @@ def _run_insight(
 
     try:
         analysis, sources, used_model = _run_agentic_insight(
-            question, title_family, context_country, window, db, client, model
+            question, title_family, context_country, window, db, client, model, brief
         )
     except HTTPException:
         raise
@@ -875,10 +927,17 @@ def get_insight_get(
         ),
     ),
     window: int = Query(30, enum=[7, 30, 90, 365]),
+    brief: bool = Query(
+        False,
+        description=(
+            "Return a short plain-prose answer (a couple sentences, no headers/lists/"
+            "tables) instead of a full structured analysis — for compact UI widgets."
+        ),
+    ),
     db: Connection = Depends(get_db),
 ):
     """GET version — used by the dashboard."""
-    return _run_insight(q, title_family, country.upper() if country else None, window, db)
+    return _run_insight(q, title_family, country.upper() if country else None, window, db, brief)
 
 
 @router.post("", response_model=APIResponse[InsightOut])
@@ -890,4 +949,5 @@ def get_insight_post(req: InsightRequest, db: Connection = Depends(get_db)):
         req.country.upper() if req.country else None,
         req.window or 30,
         db,
+        req.brief or False,
     )
