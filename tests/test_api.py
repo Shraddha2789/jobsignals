@@ -190,8 +190,10 @@ def test_jobs_location_city_search(client):
 
 def test_insights_get(client):
     r = client.get("/v1/insights?q=What+are+the+top+skills&window=30")
-    # 200 if GROQ_API_KEY set and reachable; 503 if key missing; 502 if LLM unreachable
-    assert r.status_code in (200, 502, 503)
+    # 200 if GROQ_API_KEY set and reachable; 503 if key missing; 502 if LLM unreachable;
+    # 429 if Groq rate-limits the shared CI key (e.g. push + pull_request workflows
+    # both hitting it concurrently) — a real, already-retried-once outcome, not a bug.
+    assert r.status_code in (200, 429, 502, 503)
     if r.status_code == 200:
         data = r.json()["data"]
         assert "analysis" in data
